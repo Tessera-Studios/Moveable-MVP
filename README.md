@@ -1,5 +1,13 @@
 # Move Able MVP
 
+## Cloning the repository
+
+When cloning, please use:
+
+```
+git clone https://github.com/Tessera-Studios/Moveable-MVP moveable-mvp
+```
+
 ## **Project Overview** {#project-overview}
 
 **Primary Goal**
