@@ -4,6 +4,14 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+<!-- BEGIN:progress-tracking -->
+# Read PROGRESS.md First
+
+Before writing any code, read `PROGRESS.md` at the project root. It tracks exactly what has been built in each phase, where files live, and what is still pending. This prevents duplicating work, contradicting existing implementations, or missing established conventions.
+
+After completing any phase or significant piece of work, update `PROGRESS.md` to reflect what was added.
+<!-- END:progress-tracking -->
+
 <!-- BEGIN:project-guidelines -->
 # Project Guidelines
 
