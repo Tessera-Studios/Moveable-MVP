@@ -7,6 +7,14 @@ export interface Profile {
   created_at: string;
 }
 
+export interface InvitationCode {
+  code: string;
+  provider_id: string;
+  is_consumed: boolean;
+  created_at: string;
+  expires_at: string | null;
+}
+
 export interface SessionTemplate {
   id: string;
   provider_id: string;

@@ -1,4 +1,5 @@
 import React from "react";
+import InvitationCodeWidget from "./InvitationCodeWidget";
 
 export default function ProviderDashboardPage(): React.JSX.Element {
   return (
@@ -15,6 +16,8 @@ export default function ProviderDashboardPage(): React.JSX.Element {
           No patients added yet. Invite patients to get started.
         </span>
       </div>
+
+      <InvitationCodeWidget />
 
       <div className="bg-card rounded-card shadow-card p-5 flex flex-col gap-1">
         <span className="text-lg font-semibold text-foreground">

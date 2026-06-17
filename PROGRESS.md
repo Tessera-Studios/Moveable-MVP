@@ -57,11 +57,52 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+---
+
+## Phase 2 — Authentication & Data Layer (Complete)
+
+**Completed:** 2026-06-17
+**Spec:** `docs/02-AUTHENTICATION.md`
+
+### What was built
+
+**Database Schema**
+- `supabase/migrations/20260617000000_phase2_schema.sql` — Full schema for all 7 tables: `users`, `invitation_codes`, `sessions_template`, `exercises`, `session_executions`, `videos`, `messages`; enums `user_role` and `execution_status`; all indexes; RLS enabled on every table; `authenticated` role GRANTs; all RLS policies with `WITH CHECK` clauses
+- **Apply this migration manually** via the Supabase Dashboard SQL Editor or CLI
+
+**Server Actions**
+- `lib/actions/auth.ts` — `registerProvider(email, password)` and `registerPatient(email, password, code)`. Patient registration validates the code exists, is unconsumed, and unexpired before creating the auth user and inserting into `public.users`.
+- `lib/actions/invitation.ts` — `generateInvitationCode()`. Provider-only server action that generates a 12-char base64url code via `crypto.randomBytes`, inserts it into `invitation_codes`, and returns the code.
+
+**Auth Flows**
+- `app/(auth)/register/page.tsx` — Rewritten as a three-state page:
+  - Default (`/register`): role picker (Provider vs Patient)
+  - `/register?role=provider`: provider email/password form
+  - `/register?role=patient` or `/register?code=XXXX`: patient form with invitation code field (code pre-filled when passed via URL)
+
+**Routing & Auth Guard**
+- `proxy.ts` — Updated to use `getUser()` (secure, verifies with auth server) instead of `getSession()`. Changed `profiles` table reference to `users`.
+- `app/(dashboard)/layout.tsx` — Changed `profiles` table reference to `users`.
+
+**Provider Dashboard Widget**
+- `app/(dashboard)/provider/InvitationCodeWidget.tsx` — Client component with "Generate invitation code" button. Shows the generated code with a one-click copy button. Calls `generateInvitationCode` server action.
+- `app/(dashboard)/provider/page.tsx` — Now renders `InvitationCodeWidget`.
+
+**Types**
+- `lib/types.ts` — Added `InvitationCode` interface.
+
+### Known gaps / next steps
+- The SQL migration must be applied manually to the Supabase project (no CLI configured)
+- `public.users` table shadows `auth.users` name in different schemas — this is intentional per spec; all app queries use `public.users`
+- Email confirmation flow: Supabase by default sends a confirmation email; for local dev, disable "Confirm email" in Auth settings or use inbucket
+- No test suite yet for invitation code uniqueness (U1) or consumption flow (I2)
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
-| 2 — Authentication | `docs/02-AUTHENTICATION.md` | Not started |
 | 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Not started |
 | 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Not started |
 | 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Not started |
