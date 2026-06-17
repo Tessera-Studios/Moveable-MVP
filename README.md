@@ -4,7 +4,7 @@
 
 **Primary Goal**
 
-To develop a Progressive Web Application for Total Therapy to assist physiotherapists and patients with keeping track of therapy progress, and recovery.
+To develop a Progressive Web Application called "Move Able", for the company Total Therapy Barbados, to assist physiotherapists and patients with keeping track of therapy progress, and recovery.
 
 **Objectives**
 
@@ -40,7 +40,7 @@ The following is a detailed outline of the work to be completed under this propo
   * Video player must include speed controls.  
 * Exercise creation and assignment  
   * Exercises assigned to a patient are given as sessions.  
-  * Sessions reset daily, and patients are encouraged to complete the entire session.  
+  * Session progress reset daily, and patients are encouraged to complete the entire session.  
   * The daily streak will be incremented once a session is completed.  
   * Exercises are connected with videos  
   * Exercises include \# of sets and reps to complete, along with the name of the exercise  
