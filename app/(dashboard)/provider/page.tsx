@@ -1,32 +1,160 @@
 import React from "react";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { StatsOverview } from "./StatsOverview";
+import { PatientRosterCard } from "./PatientRosterCard";
+import { RecentActivity } from "./RecentActivity";
 import InvitationCodeWidget from "./InvitationCodeWidget";
+import Link from "next/link";
+import { Button } from "@/components/ui";
 
-export default function ProviderDashboardPage(): React.JSX.Element {
+interface PatientRow {
+  id: string;
+  email: string | null;
+  created_at: string;
+}
+
+interface ExecutionRow {
+  id: string;
+  patient_id: string;
+  completed_at: string | null;
+  sessions_template: { name: string } | null;
+}
+
+function computeStreak(
+  executions: { completed_at: string | null }[]
+): number {
+  const days = executions
+    .filter((e) => e.completed_at)
+    .map((e) => {
+      const d = new Date(e.completed_at!);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })
+    .sort((a, b) => b - a);
+
+  const unique = [...new Set(days)];
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < unique.length; i++) {
+    const expected = today.getTime() - i * 86400000;
+    if (unique[i] === expected) streak++;
+    else break;
+  }
+  return streak;
+}
+
+export default async function ProviderDashboardPage(): Promise<React.JSX.Element> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: patientsRaw } = await supabase
+    .from("users")
+    .select("id, email, created_at")
+    .eq("provider_id", user.id)
+    .eq("role", "patient");
+
+  const patients = (patientsRaw ?? []) as PatientRow[];
+
+  const { data: executions } = await supabase
+    .from("session_executions")
+    .select("id, patient_id, completed_at, sessions_template(name)")
+    .in(
+      "patient_id",
+      patients.map((p) => p.id)
+    )
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(50);
+
+  const execs = (executions ?? []) as ExecutionRow[];
+
+  const sessionsThisWeek = execs.filter(
+    (e) => e.completed_at && e.completed_at > weekAgo
+  ).length;
+
+  const patientsWithStats = patients.map((p) => {
+    const patientExecs = execs.filter((e) => e.patient_id === p.id);
+    const streak = computeStreak(patientExecs);
+    const last_active =
+      patientExecs.length > 0 ? patientExecs[0].completed_at : null;
+    const compliance_rate =
+      patientExecs.length > 0
+        ? Math.min(100, Math.round((patientExecs.length / 7) * 100))
+        : 0;
+    return { ...p, streak, last_active, compliance_rate };
+  });
+
+  const avgComplianceRate =
+    patientsWithStats.length > 0
+      ? Math.round(
+          patientsWithStats.reduce((s, p) => s + p.compliance_rate, 0) /
+            patientsWithStats.length
+        )
+      : 0;
+
+  const recentActivity = execs.slice(0, 10).map((e) => ({
+    id: e.id,
+    patient_email: patients.find((p) => p.id === e.patient_id)?.email ?? null,
+    session_name: e.sessions_template?.name ?? "Session",
+    completed_at: e.completed_at!,
+  }));
+
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="px-5 pt-10 flex flex-col gap-5">
-      <h1 className="text-2xl font-semibold text-foreground">
-        Good morning, Doctor
-      </h1>
-
-      <div className="bg-card rounded-card shadow-card p-5 flex flex-col gap-1">
-        <span className="text-lg font-semibold text-foreground">
-          0 patients
-        </span>
-        <span className="text-sm text-muted">
-          No patients added yet. Invite patients to get started.
-        </span>
+    <div className="px-5 pt-10 pb-6 flex flex-col gap-5">
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">{greeting}</h1>
+        <p className="text-sm text-muted mt-0.5">
+          Here's your practice at a glance.
+        </p>
       </div>
 
-      <InvitationCodeWidget />
+      <StatsOverview
+        totalPatients={patients.length}
+        sessionsThisWeek={sessionsThisWeek}
+        avgComplianceRate={avgComplianceRate}
+      />
 
-      <div className="bg-card rounded-card shadow-card p-5 flex flex-col gap-1">
-        <span className="text-lg font-semibold text-foreground">
-          No sessions today
-        </span>
-        <span className="text-sm text-muted">
-          Your scheduled sessions will appear here.
-        </span>
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-semibold text-foreground">Patients</h2>
+          <Link
+            href="/provider/patients"
+            className="text-sm text-primary font-medium"
+          >
+            View all
+          </Link>
+        </div>
+        <PatientRosterCard patients={patientsWithStats.slice(0, 5)} />
+      </section>
+
+      <div className="flex flex-col gap-3">
+        <InvitationCodeWidget />
+        <Link href="/provider/sessions/new">
+          <Button variant="secondary" className="w-full">
+            Create Session Template
+          </Button>
+        </Link>
       </div>
+
+      <section>
+        <h2 className="text-base font-semibold text-foreground mb-2">
+          Recent Activity
+        </h2>
+        <RecentActivity items={recentActivity} />
+      </section>
     </div>
   );
 }
