@@ -60,3 +60,11 @@ export interface Message {
   media_url: string | null;
   created_at: string;
 }
+
+export interface PatientStats {
+  streak: number;
+  totalCompleted: number;
+  recentCompletions: { date: string; completed: boolean }[];
+  painScores: { date: string; score: number }[];
+  easeScores: { date: string; score: number }[];
+}

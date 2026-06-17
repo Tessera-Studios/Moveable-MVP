@@ -99,12 +99,62 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## Phase 4 — Patient Interface & Gamification (Complete)
+
+**Completed:** 2026-06-17
+**Spec:** `docs/04-PATIENT-INTERFACE.md`
+
+### What was built
+
+**Server Actions**
+- `lib/actions/executions.ts` — `completeSession(sessionTemplateId, easeScore, painScore, timezone)` writes to `session_executions`, calculates streak using timezone-aware date grouping, and returns `{ streak, totalCompleted }`. `getPatientStats(timezone)` aggregates all stats (30-day history, pain/ease scores, streak) for the progress and dashboard pages.
+
+**Types**
+- `lib/types.ts` — Added `PatientStats` interface.
+
+**Patient Dashboard** (`/patient`)
+- `app/(dashboard)/patient/page.tsx` — Server component with `Suspense` skeleton fallback. Fetches most recent session template and exercises alongside stats in parallel.
+- `components/patient/StreakBanner.tsx` — Full-width gradient hero (blue→teal) with 56px bold streak count, motivational copy, and total sessions.
+- `components/patient/ActiveSessionCard.tsx` — Client component with `@dnd-kit/sortable` drag-and-drop exercise reordering. Passes final order as URL param to session page. No network calls during reorder.
+- `components/patient/ProgressPreview.tsx` — 7-bar mini chart (green/gray) showing last 7 days of completions.
+
+**Session Execution** (`/patient/session/[sessionId]`)
+- `app/(dashboard)/patient/session/[sessionId]/page.tsx` — Server page that fetches and applies URL-param exercise ordering.
+- `components/patient/ExerciseExecutor.tsx` — Client component managing all session state: current exercise index, completed sets per exercise, progress bar, dot navigation. Set completion circles animate on mark (CSS `setComplete` keyframe). Finish button appears when all exercises complete.
+- `app/globals.css` — Added `@keyframes setComplete` with `prefers-reduced-motion` support.
+
+**Feedback** (`/patient/session/[sessionId]/feedback`)
+- `app/(dashboard)/patient/session/[sessionId]/feedback/page.tsx` — Server page.
+- `components/patient/FeedbackForm.tsx` — Client component with emoji rating buttons for ease (1–5) and pain (1–5). Calls `completeSession` server action, shows streak toast on success, navigates to `/patient/progress`.
+
+**Profile** (`/patient/profile`)
+- `app/(dashboard)/patient/profile/page.tsx` — Server component showing avatar, email, member-since, provider notes (per session), full exercise list, and provider info card.
+
+**Progress** (`/patient/progress`)
+- `app/(dashboard)/patient/progress/page.tsx` — Server page with Suspense skeleton.
+- `components/patient/ProgressCharts.tsx` — Client component using recharts `BarChart` (30-day completions) and two `LineChart`s (pain and ease trends). Summary stat tiles (streak, total, 30-day compliance %).
+
+**Navigation**
+- `app/(dashboard)/patient/exercises/page.tsx` — Redirects to `/patient/profile`.
+
+**Dependencies added**
+- `recharts@^3.8.1` — Chart library for progress page.
+
+### Known gaps / next steps
+- Timezone is hardcoded to `"UTC"` server-side; client should send `Intl.DateTimeFormat().resolvedOptions().timeZone` (done in `FeedbackForm` but dashboard load uses UTC).
+- MessageBadge on dashboard skipped — Phase 6 (Realtime Chat).
+- "Record My Form" button in session execution skipped — Phase 5 (Multimedia).
+- No automated test suite for streak calculation (U2) or drag-and-drop client-only assertion (U3).
+- Patient profile shows no phone/address — these columns don't exist in the current schema.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
 | 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Not started |
-| 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Not started |
+| 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Complete |
 | 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Not started |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
 | 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
