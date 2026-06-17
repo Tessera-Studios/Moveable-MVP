@@ -2,6 +2,36 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { UserRole } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type RequireRoleSuccess = { supabase: SupabaseClient; userId: string };
+type RequireRoleResult = RequireRoleSuccess | { error: string };
+
+/**
+ * Asserts the caller is authenticated and holds the given role.
+ * Returns the Supabase client and userId on success, or { error } to return early.
+ */
+export async function requireRole(
+  role: UserRole
+): Promise<RequireRoleResult> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+
+  const { data: profile, error: profileError } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: UserRole }>();
+
+  if (profileError || profile?.role !== role) {
+    return { error: `Only ${role}s can perform this action.` };
+  }
+
+  return { supabase, userId: user.id };
+}
 
 export async function registerProvider(
   email: string,
