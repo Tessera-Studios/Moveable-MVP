@@ -32,6 +32,7 @@ export interface Exercise {
   reps: number;
   patient_notes: string | null;
   sort_order: number;
+  video_id: string | null;
 }
 
 export interface SessionExecution {
