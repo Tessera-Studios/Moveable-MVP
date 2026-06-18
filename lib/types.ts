@@ -60,6 +60,20 @@ export interface Message {
   content: string;
   media_url: string | null;
   created_at: string;
+  is_read: boolean;
+}
+
+export type ClientMessage = Message & {
+  _optimistic?: boolean;
+  _status?: "sending" | "sent" | "failed";
+};
+
+export interface ConversationRow {
+  otherUserId: string;
+  otherUserName: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
 }
 
 export interface PatientStats {
