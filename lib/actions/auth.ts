@@ -34,6 +34,12 @@ export async function requireRole(
   return { supabase, userId: user.id };
 }
 
+export async function signOut(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
 export async function registerProvider(
   email: string,
   password: string
@@ -74,8 +80,9 @@ export async function registerPatient(
 ): Promise<{ error: string } | never> {
   const supabase = await createClient();
 
-  // Validate the invitation code before creating the auth user
-  const { data: invite, error: lookupError } = await supabase
+  // Use admin client to bypass RLS — the user is unauthenticated at this point
+  const adminSupabase = createAdminClient();
+  const { data: invite, error: lookupError } = await adminSupabase
     .from("invitation_codes")
     .select("provider_id, is_consumed, expires_at")
     .eq("code", code.trim().toUpperCase())
@@ -106,7 +113,6 @@ export async function registerPatient(
     return { error: "Sign-up succeeded but no user was returned." };
   }
 
-  const adminSupabase = createAdminClient();
   const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
     role: "patient",

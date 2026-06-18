@@ -2,6 +2,7 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Exercise, SessionTemplate } from "@/lib/types";
+import LogoutButton from "@/components/shared/LogoutButton";
 
 export default async function PatientProfilePage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -159,6 +160,8 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
           </p>
         </div>
       )}
+
+      <LogoutButton />
     </div>
   );
 }

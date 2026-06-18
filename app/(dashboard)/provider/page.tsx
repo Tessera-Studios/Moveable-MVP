@@ -7,6 +7,7 @@ import { RecentActivity } from "./RecentActivity";
 import InvitationCodeWidget from "./InvitationCodeWidget";
 import Link from "next/link";
 import { Button } from "@/components/ui";
+import LogoutButton from "@/components/shared/LogoutButton";
 
 interface PatientRow {
   id: string;
@@ -155,6 +156,8 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
         </h2>
         <RecentActivity items={recentActivity} />
       </section>
+
+      <LogoutButton />
     </div>
   );
 }
