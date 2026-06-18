@@ -31,7 +31,7 @@ function ProviderSignup(): React.JSX.Element {
   return (
     <div className="max-w-[400px] w-full mx-auto px-5 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-primary mb-1">Moveable</h1>
+        <h1 className="text-3xl font-semibold text-primary mb-1">Move Able</h1>
         <p className="text-muted text-base">Create your provider account.</p>
       </div>
 
@@ -118,7 +118,7 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
   return (
     <div className="max-w-[400px] w-full mx-auto px-5 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-primary mb-1">Moveable</h1>
+        <h1 className="text-3xl font-semibold text-primary mb-1">Move Able</h1>
         <p className="text-muted text-base">Join your care team.</p>
       </div>
 
@@ -199,7 +199,7 @@ function RolePicker(): React.JSX.Element {
   return (
     <div className="max-w-[400px] w-full mx-auto px-5 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-primary mb-1">Moveable</h1>
+        <h1 className="text-3xl font-semibold text-primary mb-1">Move Able</h1>
         <p className="text-muted text-base">I am a…</p>
       </div>
 

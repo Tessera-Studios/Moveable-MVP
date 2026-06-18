@@ -9,10 +9,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Moveable",
+  title: "Move Able",
   description: "Physical therapy, tracked and connected.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Moveable" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Move Able" },
 };
 
 export const viewport: Viewport = {

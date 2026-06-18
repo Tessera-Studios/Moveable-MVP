@@ -1,4 +1,4 @@
-export const APP_NAME: string = "Moveable";
+export const APP_NAME: string = "Move Able";
 
 export const APP_DESCRIPTION: string = "Physical therapy, tracked and connected.";
 
