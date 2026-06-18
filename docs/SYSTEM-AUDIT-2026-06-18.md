@@ -1,8 +1,28 @@
 # System Audit — Move Able MVP
 
 **Date:** 2026-06-18
-**Branch audited:** `feat+account-deletion` (HEAD `da5db8b`)
+**Branch audited:** `feat+account-deletion` (originally `da5db8b`; later rebased onto `main`)
 **Method:** Account-deletion feature built via subagent-driven-development + a parallel per-spec audit of the implemented system against every doc in `docs/` (01–07), each by a dedicated reviewer.
+
+---
+
+## Resolution Log (post-audit)
+
+The branch was **rebased onto `main`**, dissolving the two staleness false-positives (Phase 6 chat and the "Move Able" rename are now present). The following findings were then fixed (commits `84d903a`, `e72b2bf`):
+
+| Finding | Resolution |
+|---|---|
+| **C1** provider-notes leak | `provider_notes` removed from all 4 patient-side queries; "Notes from your therapist" block deleted. Patients now only see `exercises.patient_notes`. |
+| **C2** PWA icons missing | `icon-192/512.png` + `icon.svg` generated from `move-able.svg` into `public/icons`; wired into `manifest.json` + root metadata (apple-touch-icon). |
+| **I1** streak hardcoded to UTC | `TimezoneSync` cookie + `getRequestTimezone()` helper; dashboard & progress now use the patient's local day (UTC fallback on first load). |
+| **I3** compliance rate >100% | Export route now counts distinct completed days / days in range (shared `complianceRate` helper). |
+| **I4** completeSession row inflation | Now updates an existing same-template same-local-day completed row instead of inserting a duplicate. |
+| **No tests** | Vitest set up; pure stats/timezone logic extracted to `lib/stats.ts` and covered by 15 tests (streak U2, compliance I3 regression, timezone validation). |
+
+**Still deferred (documented, not fixed):**
+- **I2** — patient profile name/phone/address + `VideoHistoryList` require new `users` columns and a product decision (schema change); not done to avoid speculative scope.
+- Minors: `zod` validation, `Modal` focus trap, `export_logs` audit table (spec-optional), documented MVP de-scopes (SessionVideoAttacher, fail-fast upload), and the pre-existing invalid `package.json` `"type": "typescript"` field.
+- Integration tests for RLS / provider-notes-hidden / realtime delivery need a live test DB and are not yet written.
 
 ---
 

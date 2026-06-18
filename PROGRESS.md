@@ -339,9 +339,38 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## Account Deletion + Audit Fixes (Complete)
+
+**Completed:** 2026-06-18
+**Plan:** `docs/superpowers/plans/2026-06-18-account-deletion.md`
+**Audit:** `docs/SYSTEM-AUDIT-2026-06-18.md`
+
+### What was built
+
+**Account deletion**
+- `supabase/migrations/20260618000001_account_deletion.sql` — drops `check_patient_has_provider`; drops/re-adds `users_id_fkey` without `ON DELETE CASCADE` so `public.users` (and all referencing rows) survive auth deletion. **Apply manually.**
+- `lib/actions/account.ts` — `deletePatientAccount` (auth-delete first as the gate, then best-effort video purge) and `deleteProviderAccount` (blocked while patients are still linked). Both take no parameters and derive the user from the session, so there is no cross-account deletion path.
+- `components/shared/DeleteAccountButton.tsx` — shared confirmation-modal button, wired into the patient profile and provider dashboard.
+
+**Audit fixes** (see audit Resolution Log)
+- **Confidentiality:** removed `sessions_template.provider_notes` from all patient-side queries (spec 03 — provider notes are provider-only).
+- **PWA:** `public/icons/` (192/512 PNG + SVG) generated from `move-able.svg`; wired into manifest + metadata.
+- **Timezone:** `components/shared/TimezoneSync.tsx` + `lib/timezone.ts` relay the client TZ via cookie; patient dashboard/progress streaks now use the local day.
+- **Stats correctness:** export compliance rate uses distinct completed days; `completeSession` dedupes per local day.
+
+**Testing**
+- Vitest added (`npm test`). Pure stats/timezone logic extracted to `lib/stats.ts` and covered by `lib/stats.test.ts` + `lib/timezone.test.ts` (15 tests).
+
+### Known gaps
+- Migration applied manually (no CLI configured).
+- I2 (patient profile name/phone/address + video history) needs new `users` columns + product decision — deferred.
+- Integration tests (RLS, provider-notes-hidden, realtime) need a live test DB — not yet written.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Complete |
-| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
+| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Complete |
