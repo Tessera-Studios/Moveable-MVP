@@ -26,12 +26,14 @@ Two changes:
 
 ### Server action: `deletePatientAccount()` (`lib/actions/account.ts`)
 
-1. Assert authenticated caller has role `patient`
-2. Fetch all videos uploaded by the patient (`videos WHERE uploader_id = userId`)
-3. Delete each from Supabase Storage (`exercise-videos` bucket)
-4. Delete the `videos` rows from the DB
-5. Set `public.users.provider_id = null` — unlinks the patient from their provider's roster
-6. Call `supabase.auth.admin.deleteUser(userId)` — auth account gone, `public.users` row stays
+Uses `createAdminClient()` throughout — the regular client cannot call `auth.admin.deleteUser` and RLS blocks storage deletions for the caller's own files at the service-role level.
+
+1. Assert authenticated caller has role `patient` (via regular client `getUser()`)
+2. Fetch all videos uploaded by the patient (`videos WHERE uploader_id = userId`) via admin client
+3. Delete each from Supabase Storage (`exercise-videos` bucket) via admin client
+4. Delete the `videos` rows from the DB via admin client
+5. Set `public.users.provider_id = null` via admin client
+6. Call `adminClient.auth.admin.deleteUser(userId)` — auth account gone, `public.users` row stays
 
 Returns `{ error: string }` on any failure, redirects to `/login` on success.
 
@@ -57,9 +59,11 @@ On click: opens a confirmation modal with copy — *"This will permanently delet
 
 ### Server action: `deleteProviderAccount()` (`lib/actions/account.ts`)
 
-1. Assert authenticated caller has role `provider`
-2. Count patients: `SELECT COUNT(*) FROM users WHERE provider_id = userId` — if > 0, return `{ error: "Remove all your patients before deleting your account." }`
-3. Call `supabase.auth.admin.deleteUser(userId)` — auth account gone, `public.users` row stays
+Uses `createAdminClient()` for the auth deletion step.
+
+1. Assert authenticated caller has role `provider` (via regular client `getUser()`)
+2. Count patients via admin client: `SELECT COUNT(*) FROM users WHERE provider_id = userId` — if > 0, return `{ error: "Remove all your patients before deleting your account." }`
+3. Call `adminClient.auth.admin.deleteUser(userId)` — auth account gone, `public.users` row stays
 
 All provider data (session templates, exercises, instructional videos, invitation codes, messages) is preserved for patients' historical records.
 
