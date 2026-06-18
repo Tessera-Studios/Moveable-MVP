@@ -23,7 +23,7 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
       .single(),
     supabase
       .from("sessions_template")
-      .select("id, name, provider_notes, patient_id, provider_id, created_at")
+      .select("id, name, patient_id, provider_id, created_at")
       .eq("patient_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -93,25 +93,6 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
           </div>
         </div>
       </div>
-
-      {/* Provider notes */}
-      {sessions.some((s) => s.provider_notes) && (
-        <div className="bg-card rounded-card shadow-card p-5">
-          <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-3">
-            Notes from your therapist
-          </p>
-          {sessions
-            .filter((s) => s.provider_notes)
-            .map((s) => (
-              <div key={s.id} className="mb-3 last:mb-0">
-                <p className="text-xs text-placeholder mb-1 font-medium">
-                  {s.name}
-                </p>
-                <p className="text-sm text-foreground">{s.provider_notes}</p>
-              </div>
-            ))}
-        </div>
-      )}
 
       {/* Exercise list */}
       <div className="bg-card rounded-card shadow-card p-5">

@@ -5,6 +5,7 @@ import StreakBanner from "@/components/patient/StreakBanner";
 import ActiveSessionCard from "@/components/patient/ActiveSessionCard";
 import ProgressPreview from "@/components/patient/ProgressPreview";
 import { getPatientStats } from "@/lib/actions/executions";
+import { getRequestTimezone } from "@/lib/timezone";
 import type { SessionTemplate, Exercise } from "@/lib/types";
 import { EmptyState } from "@/components/ui";
 
@@ -16,11 +17,12 @@ async function DashboardContent(): Promise<React.JSX.Element> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const timezone = await getRequestTimezone();
   const [stats, sessionsResult] = await Promise.all([
-    getPatientStats("UTC"),
+    getPatientStats(timezone),
     supabase
       .from("sessions_template")
-      .select("id, provider_id, patient_id, name, provider_notes, created_at")
+      .select("id, provider_id, patient_id, name, created_at")
       .eq("patient_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1),

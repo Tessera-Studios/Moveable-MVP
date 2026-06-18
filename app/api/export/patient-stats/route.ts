@@ -75,7 +75,15 @@ async function getExportStats(
   const toDate = new Date(to);
   const daysInRange =
     Math.floor((toDate.getTime() - fromDate.getTime()) / 86_400_000) + 1;
-  const complianceRate = daysInRange > 0 ? totalCompleted / daysInRange : 0;
+  // Compliance = fraction of days in range with at least one completed session.
+  // Counting distinct days (not raw sessions) keeps the rate within 0–100% even
+  // when a patient completes multiple sessions on the same day.
+  const distinctCompletedDays = new Set(
+    sessions.map((s) =>
+      new Date(s.completed_at).toLocaleDateString("en-CA", { timeZone: "UTC" })
+    )
+  ).size;
+  const complianceRate = daysInRange > 0 ? distinctCompletedDays / daysInRange : 0;
 
   const { data: allRows } = await supabase
     .from("session_executions")

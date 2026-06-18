@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <style>
+    /* Light mode color palette */
+   .bg { fill: #F8FAFC; } /* Tailwind slate-50 */
+   .primary { fill: #2563EB; } /* Tailwind blue-600 */
+   .secondary { fill: #60A5FA; } /* Tailwind blue-400 */
+    
+    /* Dark mode color palette */
+    @media (prefers-color-scheme: dark) {
+     .bg { fill: #0F172A; } /* Tailwind slate-900 */
+     .primary { fill: #3B82F6; } /* Tailwind blue-500 */
+     .secondary { fill: #93C5FD; } /* Tailwind blue-300 */
+    }
+  </style>
+  
+  <rect width="512" height="512" rx="115" class="bg" />
+  
+  <g transform="translate(106, 106)">
+    <circle cx="200" cy="50" r="35" class="primary" />
+    
+    <path class="secondary" d="M 120 110 
+             C 160 80, 220 80, 250 120 
+             L 280 180 
+             A 20 20 0 0 1 245 200 
+             L 220 150 
+             C 200 120, 160 120, 140 140 
+             Z" />
+             
+    <path class="primary" d="M 120 110 
+             C 100 130, 90 160, 100 190 
+             L 130 280 
+             A 20 20 0 0 0 165 270 
+             L 140 195 
+             C 135 175, 145 155, 160 140 
+             Z" />
+             
+    <path class="secondary" d="M 140 195 
+             C 160 200, 175 220, 180 240 
+             L 200 310 
+             A 20 20 0 0 0 240 300 
+             L 210 210 
+             C 200 180, 170 160, 140 160 
+             Z" />
+  </g>
+</svg>

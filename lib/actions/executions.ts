@@ -65,14 +65,41 @@ export async function completeSession(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthenticated");
 
-  const { error } = await supabase.from("session_executions").insert({
-    session_template_id: sessionTemplateId,
-    patient_id: user.id,
-    status: "completed",
+  // Dedupe per local day: if this template was already completed today (in the
+  // patient's timezone), update that row instead of inserting a duplicate.
+  // session_executions has no unique constraint, so this is enforced here.
+  const now = new Date();
+  const today = toLocalDate(now.toISOString(), timezone);
+
+  const { data: todaysCompletions } = await supabase
+    .from("session_executions")
+    .select("id, completed_at")
+    .eq("patient_id", user.id)
+    .eq("session_template_id", sessionTemplateId)
+    .eq("status", "completed")
+    .not("completed_at", "is", null);
+
+  const existing = (todaysCompletions ?? []).find(
+    (c) => toLocalDate(c.completed_at!, timezone) === today
+  );
+
+  const payload = {
     ease_score: easeScore,
     pain_score: painScore,
-    completed_at: new Date().toISOString(),
-  });
+    completed_at: now.toISOString(),
+  };
+
+  const { error } = existing
+    ? await supabase
+        .from("session_executions")
+        .update(payload)
+        .eq("id", existing.id)
+    : await supabase.from("session_executions").insert({
+        session_template_id: sessionTemplateId,
+        patient_id: user.id,
+        status: "completed",
+        ...payload,
+      });
 
   if (error) throw new Error(error.message);
 

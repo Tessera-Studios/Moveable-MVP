@@ -22,7 +22,7 @@ export default async function FeedbackPage({
 
   const { data: sessionData } = await supabase
     .from("sessions_template")
-    .select("id, provider_id, patient_id, name, provider_notes, created_at")
+    .select("id, provider_id, patient_id, name, created_at")
     .eq("id", sessionId)
     .eq("patient_id", user.id)
     .single<SessionTemplate>();
