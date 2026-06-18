@@ -2,6 +2,9 @@ import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/ui";
+import { VideoPlayer } from "@/components/shared/VideoPlayer";
+import { getProviderVideos } from "@/lib/actions/videos";
+import type { ProviderVideoRow } from "@/lib/actions/videos";
 
 interface ExerciseRow {
   id: string;
@@ -18,13 +21,17 @@ export default async function LibraryPage(): Promise<React.JSX.Element> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: exercisesRaw } = await supabase
-    .from("exercises")
-    .select("id, name, sets, reps, sessions_template!inner(provider_id)")
-    .eq("sessions_template.provider_id", user.id)
-    .order("name");
+  const [exercisesResult, videosResult] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("id, name, sets, reps, sessions_template!inner(provider_id)")
+      .eq("sessions_template.provider_id", user.id)
+      .order("name"),
+    getProviderVideos(),
+  ]);
 
-  const exercises = (exercisesRaw ?? []) as ExerciseRow[];
+  const exercises = (exercisesResult.data ?? []) as ExerciseRow[];
+  const videos: ProviderVideoRow[] = "error" in videosResult ? [] : videosResult;
 
   return (
     <div className="px-5 pt-10 pb-6 flex flex-col gap-5">
@@ -59,11 +66,30 @@ export default async function LibraryPage(): Promise<React.JSX.Element> {
       </section>
 
       <section>
-        <h2 className="text-base font-semibold text-foreground mb-3">Videos</h2>
-        <EmptyState
-          title="Video library coming soon"
-          description="Upload exercise demonstration videos in a future update."
-        />
+        <h2 className="text-base font-semibold text-foreground mb-3">
+          Videos ({videos.length})
+        </h2>
+        {videos.length === 0 ? (
+          <EmptyState
+            title="No videos yet"
+            description="Attach instructional videos to exercises in your session templates."
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {videos.map((video) => (
+              <div key={video.id} className="bg-card rounded-card shadow-card p-4">
+                <VideoPlayer
+                  storagePath={video.storage_path}
+                  label={
+                    video.exercise_name
+                      ? `Exercise: ${video.exercise_name} · ${new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                      : `Unlinked · ${new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

@@ -198,8 +198,9 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
-## Phase 5 — Multimedia (Planning Complete, Implementation Not Started)
+## Phase 5 — Multimedia (Complete)
 
+**Completed:** 2026-06-18
 **Spec:** `docs/05-MULTIMEDIA.md`
 **Implementation plan:** `docs/superpowers/plans/2026-06-17-phase5-multimedia.md`
 
@@ -211,16 +212,40 @@ This file tracks what has been built. Read it before starting any work so you kn
 - Provider library Videos tab shows all provider-uploaded videos with exercise name labels
 - Session-level video attacher (`SessionVideoAttacher`) **skipped for MVP**
 
-### What still needs to be done (9 tasks in the plan)
-1. DB migration — `ALTER TABLE exercises ADD COLUMN video_id` + Supabase Storage bucket + RLS policies (bucket must be created manually in the dashboard)
-2. `lib/actions/videos.ts` — server actions: signed upload URL, metadata save, signed playback URL, instructional attach, provider/patient video queries
-3. `components/shared/RecordVideo.tsx` — MediaRecorder-based recording UI
-4. `components/shared/VideoPlayer.tsx` — signed-URL-based secure playback
-5. `components/provider/ExerciseVideoAttacher.tsx` — provider attaches/views instructional video per exercise row
-6. `ExerciseList.tsx` + edit session page update — add `video_id`/`video_storage_path` to `ExerciseFormItem`, load from DB
-7. `components/patient/PatientFormRecord.tsx` + `ExerciseExecutor.tsx` update — patient records form-check videos during session
-8. Provider patient detail page — add Videos section (form-check videos)
-9. Provider library page — replace Videos placeholder with real data
+### What was built
+
+**Database**
+- `supabase/migrations/20260618000000_phase5_multimedia.sql` — `ALTER TABLE exercises ADD COLUMN video_id uuid REFERENCES videos(id) ON DELETE SET NULL`; Supabase Storage bucket `exercise-videos` (private); RLS policies granting providers upload/read on their own videos and patients read on videos linked to their exercises
+- **Apply this migration manually** via the Supabase Dashboard SQL Editor or CLI
+- **Storage bucket must also be created manually** in the Supabase Dashboard (Storage → New bucket, name: `exercise-videos`, public: off)
+
+**Server Actions**
+- `lib/actions/videos.ts` — `getUploadUrl(filename, contentType)` returns a signed upload URL; `saveVideoMetadata(storagePath, exerciseId?)` inserts a row into `videos`; `getSignedPlaybackUrl(storagePath)` returns a short-lived signed URL for playback; `attachInstructionalVideo(exerciseId, videoId)` sets `exercises.video_id`; `getProviderVideos()` returns all videos uploaded by the current provider joined to exercise name; `getPatientFormVideos(patientId)` returns form-check videos for a given patient
+
+**Shared Components**
+- `components/shared/RecordVideo.tsx` — Client component using the `MediaRecorder` API; camera/mic permission request, record/stop/retake/confirm flow, uploads via signed URL, calls `saveVideoMetadata` on confirm; shows inline error on permission denial or upload failure
+- `components/shared/VideoPlayer.tsx` — Server-compatible client component; fetches a signed playback URL via `getSignedPlaybackUrl` on mount, renders a native `<video>` element with controls; accepts `storagePath` and optional `label`
+
+**Provider Components**
+- `components/provider/ExerciseVideoAttacher.tsx` — Client component rendered per exercise row in edit mode; shows camera button when no video is attached, renders `VideoPlayer` inline when a video is attached; new (unsaved) exercises display "Save the exercise first to attach an instructional video."
+- `app/(dashboard)/provider/sessions/ExerciseList.tsx` — Updated `ExerciseFormItem` to include `video_id` and `video_storage_path`; renders `ExerciseVideoAttacher` below each exercise's fields
+- `app/(dashboard)/provider/sessions/[sessionId]/edit/page.tsx` — Updated exercise fetch to include `video_id` and `videos(storage_path)`
+
+**Patient Components**
+- `components/patient/PatientFormRecord.tsx` — Client component with a "Record my form" button per exercise; opens `RecordVideo` inline; shows success confirmation after upload
+- `components/patient/ExerciseExecutor.tsx` — Updated to render `PatientFormRecord` below each exercise's set-completion UI
+
+**Provider Patient Detail**
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — Added "Form-check videos" section at the bottom; calls `getPatientFormVideos(patientId)` and renders each via `VideoPlayer`
+
+**Provider Library**
+- `app/(dashboard)/provider/library/page.tsx` — Replaced "Video library coming soon" placeholder with a live list; calls `getProviderVideos()` in parallel with the exercises query; renders each video via `VideoPlayer` with exercise name label and upload date; shows `EmptyState` when none
+
+### Known gaps
+- DB migration must be applied manually (no CLI configured)
+- Storage bucket `exercise-videos` must be created manually in the Supabase Dashboard
+- `MediaRecorder` codec support varies by browser; Safari on iOS uses `video/mp4` while Chrome uses `video/webm` — the upload URL `contentType` is derived from the recorder's `mimeType` at runtime, so playback depends on the browser supporting the recorded format
+- No automated tests for video upload/playback flow
 
 ---
 
