@@ -156,7 +156,9 @@ Update `BottomTabBar.tsx`:
 
 ## Unread Badge in Layout
 
-`app/(dashboard)/layout.tsx` fetches the unread count (messages where `receiver_id = current user AND is_read = false`) alongside the profile fetch. Passes count as a prop to `BottomTabBar`. `ChatWindow` receives an `onUnreadClear` callback that zeroes the count client-side when a conversation is opened (avoiding a full page refresh for the badge).
+`app/(dashboard)/layout.tsx` (Server Component) fetches the unread count (messages where `receiver_id = current user AND is_read = false`) alongside the profile fetch. It wraps children in a `<UnreadCountProvider initialCount={n}>` Client Component context. `BottomTabBar` reads the count from that context. When `ChatWindow` opens a conversation, it calls `markMessagesRead` then calls `clearUnreadCount()` from the same context — zeroing the badge client-side without a full page refresh.
+
+`UnreadCountProvider` lives at `components/chat/UnreadCountProvider.tsx` and exposes `{ unreadCount, setUnreadCount }` via React context.
 
 ---
 
