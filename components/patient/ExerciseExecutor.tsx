@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Exercise } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { PatientFormRecord } from "@/components/patient/PatientFormRecord";
 
 interface ExerciseExecutorProps {
   sessionId: string;
@@ -182,6 +183,8 @@ export default function ExerciseExecutor({
             completedSets={setsCompleted}
             onComplete={handleSetComplete}
           />
+
+          <PatientFormRecord exerciseId={exercise.id} />
 
           {exerciseDone && (
             <div className="flex flex-col gap-2">
