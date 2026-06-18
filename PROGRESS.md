@@ -99,6 +99,53 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+---
+
+## Phase 3 — Provider Interface (Complete)
+
+**Completed:** 2026-06-17
+**Spec:** `docs/03-PROVIDER-INTERFACE.md`
+
+### What was built
+
+**Server Actions**
+- `lib/actions/sessions.ts` — `createSessionTemplate`, `updateSessionTemplate`, `deleteSessionTemplate`; all require provider role via `requireRole`, validate name/patient, call `revalidatePath`
+- `lib/actions/exercises.ts` — `addExercise`, `updateExercise`, `deleteExercise`, `reorderExercises`; validates name/sets/reps
+- `lib/actions/patients.ts` — `removePatient`; sets `provider_id: null` on the patient row, enforces caller owns the patient
+
+**Provider Dashboard** (`app/(dashboard)/provider/page.tsx`)
+- Fully replaced placeholder; Server Component fetches patients + session_executions in parallel
+- `StatsOverview` — 3-stat grid: total patients, sessions this week, avg compliance rate
+- `PatientRosterCard` — tap-through list with Avatar, streak, last-active, color-coded compliance Badge
+- `RecentActivity` — last 10 completed sessions with teal dot indicator
+- `InvitationCodeWidget` + "Create Session Template" quick-action button
+
+**Patient Pages**
+- `app/(dashboard)/provider/patients/page.tsx` — Roster list (EmptyState when none)
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — Detail: profile header, assigned session with exercise list, session history with ease/pain scores, remove button
+- `app/(dashboard)/provider/patients/[patientId]/RemovePatientButton.tsx` — Client component with confirmation Modal
+
+**Session Templates**
+- `app/(dashboard)/provider/templates/page.tsx` — Lists all templates with exercise count and assigned patient; links to edit
+- `app/(dashboard)/provider/sessions/new/page.tsx` — Create form (accepts `?patientId` pre-fill)
+- `app/(dashboard)/provider/sessions/[sessionId]/edit/page.tsx` — Edit form with pre-loaded data
+- `app/(dashboard)/provider/sessions/SessionForm.tsx` — Client component; handles create/edit/delete flow with `useTransition`
+- `app/(dashboard)/provider/sessions/ExerciseList.tsx` — `@dnd-kit/sortable` drag-and-drop; inline name/sets/reps/patient_notes per row; lock icon on provider notes section
+
+**Library**
+- `app/(dashboard)/provider/library/page.tsx` — Exercise list (joined via sessions_template); Videos section placeholder
+
+**Constants**
+- `lib/constants.ts` — Added `providerPatients`, `providerTemplates`, `providerLibrary`, `providerSessionNew` routes
+
+### Known gaps / next steps
+- Library page videos section is a placeholder (Phase 5)
+- Chat button on patient detail page links to Phase 6
+- Export button on patient detail page links to Phase 7
+- Compliance rate is a simple heuristic (completions / 7 days × 100); a more sophisticated calculation can replace it later
+
+---
+
 ## Phase 4 — Patient Interface & Gamification (Complete)
 
 **Completed:** 2026-06-17
@@ -153,7 +200,7 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 | Phase | Spec | Status |
 |---|---|---|
-| 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Not started |
+| 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Complete |
 | 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Complete |
 | 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Not started |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
