@@ -17,8 +17,9 @@ export async function deletePatientAccount(): Promise<{ error: string } | never>
     .eq("uploader_id", auth.userId);
 
   if (videos && videos.length > 0) {
-    const paths = videos.map((v: { storage_path: string }) => v.storage_path);
-    await adminSupabase.storage.from("exercise-videos").remove(paths);
+    const paths = videos.map((v) => v.storage_path);
+    const { error: storageError } = await adminSupabase.storage.from("exercise-videos").remove(paths);
+    if (storageError) return { error: storageError.message };
     await adminSupabase.from("videos").delete().eq("uploader_id", auth.userId);
   }
 
