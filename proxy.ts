@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isPublicRoute && pathname !== "/") {
+  if (user && isPublicRoute) {
     const { data: profile } = await supabase
       .from("users")
       .select("role")

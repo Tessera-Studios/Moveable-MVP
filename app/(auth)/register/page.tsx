@@ -11,12 +11,17 @@ import { registerProvider, registerPatient } from "@/lib/actions/auth";
 function ProviderSignup(): React.JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     setError(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     startTransition(async () => {
       const result = await registerProvider(email, password);
       if (result?.error) setError(result.error);
@@ -58,6 +63,20 @@ function ProviderSignup(): React.JSX.Element {
           />
         </Field>
 
+        <Field label="Confirm password" htmlFor="confirm-password">
+          <input
+            id="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={inputClass}
+            placeholder="Re-enter your password"
+          />
+        </Field>
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <SubmitButton loading={isPending} label="Create provider account" />
@@ -78,6 +97,7 @@ function ProviderSignup(): React.JSX.Element {
 function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState(initialCode);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -85,6 +105,10 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
   function handleSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     setError(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     startTransition(async () => {
       const result = await registerPatient(email, password, code);
       if (result?.error) setError(result.error);
@@ -137,6 +161,20 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
             onChange={(e) => setPassword(e.target.value)}
             className={inputClass}
             placeholder="Min. 8 characters"
+          />
+        </Field>
+
+        <Field label="Confirm password" htmlFor="confirm-password-patient">
+          <input
+            id="confirm-password-patient"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={inputClass}
+            placeholder="Re-enter your password"
           />
         </Field>
 

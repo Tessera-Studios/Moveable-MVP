@@ -22,7 +22,7 @@
   "type": "typescript",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname localhost",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

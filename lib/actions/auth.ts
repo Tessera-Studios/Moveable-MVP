@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import type { UserRole } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -52,7 +53,8 @@ export async function registerProvider(
     return { error: "Sign-up succeeded but no user was returned." };
   }
 
-  const { error: insertError } = await supabase.from("users").insert({
+  const adminSupabase = createAdminClient();
+  const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
     role: "provider",
     provider_id: null,
@@ -104,7 +106,8 @@ export async function registerPatient(
     return { error: "Sign-up succeeded but no user was returned." };
   }
 
-  const { error: insertError } = await supabase.from("users").insert({
+  const adminSupabase = createAdminClient();
+  const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
     role: "patient",
     provider_id: invite.provider_id,
@@ -115,7 +118,7 @@ export async function registerPatient(
   }
 
   // Mark code as consumed
-  await supabase
+  await adminSupabase
     .from("invitation_codes")
     .update({ is_consumed: true })
     .eq("code", code.trim().toUpperCase());
