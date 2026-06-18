@@ -282,10 +282,65 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## Phase 6 — Realtime Chat (Complete)
+
+**Completed:** 2026-06-18
+**Spec:** `docs/06-REALTIME-CHAT.md`
+**Design:** `docs/superpowers/specs/2026-06-18-phase6-realtime-chat-design.md`
+**Plan:** `docs/superpowers/plans/2026-06-18-phase6-realtime-chat.md`
+
+### Scoping decisions (locked)
+- Text-only — no media attachments
+- Routes: `/provider/chat` and `/patient/chat`; old `/messages` paths redirect
+- Unread badge in scope; typing indicator + presence in scope
+- Media attachments deferred to a future phase
+
+### What was built
+
+**Database**
+- `supabase/migrations/20260618000000_phase6_chat.sql` — `is_read BOOLEAN NOT NULL DEFAULT false` column on `messages`; `ALTER PUBLICATION supabase_realtime ADD TABLE public.messages`; `messages_mark_read` UPDATE policy for receivers; `idx_messages_unread` partial index
+
+**Server Actions**
+- `lib/actions/messages.ts` — `sendMessage`, `getMessages` (cursor-paginated), `getConversations` (groups by other participant), `markMessagesRead` (silently swallowed), `getUnreadCount`
+
+**Context**
+- `components/chat/UnreadCountProvider.tsx` — React context bridging server-fetched unread count to the fixed BottomTabBar and ChatWindow
+
+**Layout**
+- `app/(dashboard)/layout.tsx` — fetches unread count in parallel with profile; wraps both `<main>` and `<BottomTabBar>` in `UnreadCountProvider`
+
+**Components** (`components/chat/`)
+- `UnreadBadge.tsx` — reads from context; red dot on Messages tab
+- `PresenceDot.tsx` — green/gray online indicator
+- `TypingIndicator.tsx` — "Name is typing…" with 2s timeout
+- `MessageBubble.tsx` — sent/received styling, optimistic status, retry button
+- `MessageInput.tsx` — textarea + send, 300ms debounced typing broadcast, timer cleanup on unmount
+- `MessageList.tsx` — auto-scroll, scroll-position-preserving pagination, end-of-history marker
+- `ChatWindow.tsx` — Supabase Realtime channel (Postgres Changes + Broadcast + Presence), optimistic sends, reconnecting banner
+- `ChatList.tsx` — provider conversation list with unread counts
+
+**Tab Bar**
+- `components/shared/BottomTabBar.tsx` — routes updated to `/provider/chat` and `/patient/chat`; Messages tab shows `UnreadBadge`
+
+**Pages**
+- `app/(dashboard)/provider/chat/page.tsx` — conversation list
+- `app/(dashboard)/provider/chat/[patientId]/page.tsx` — active chat
+- `app/(dashboard)/patient/chat/page.tsx` — patient's single conversation
+- `app/(dashboard)/provider/messages/page.tsx` — redirect
+- `app/(dashboard)/patient/messages/page.tsx` — redirect
+
+### Known gaps
+- DB migration must be applied manually
+- `messages.is_read` defaults to `false` for all pre-existing rows (treated as unread-legacy)
+- Display name is patient/provider email (no separate name column in `users`)
+- No automated tests for Realtime delivery (requires two live WebSocket clients)
+- Media attachments not implemented
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
-| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Complete |
-| 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
-| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Complete |
+| 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Complete |
+| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
