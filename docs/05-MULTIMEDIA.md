@@ -1,5 +1,16 @@
 # Phase 5: Multimedia Capture & Secure Storage Pipeline
 
+## Scoping Decisions (pre-implementation Q&A)
+
+| Question | Decision |
+|---|---|
+| Priority between instructional videos (provider) vs form-check videos (patient)? | Both equally — full pipeline for both flows |
+| Upload error handling depth? | Simple fail-fast — show error on failure, let user re-record/retry manually. No retry backoff, no offline queue. |
+| Where do patient form-check videos surface for the provider? | Dedicated "Videos" section at the bottom of the patient detail page, listed chronologically |
+| Where do provider instructional videos appear? | Inline on the exercise list within the session template form |
+| Provider library Videos tab scope? | All provider-uploaded videos with labels indicating what they're attached to |
+| Session-level video attacher (`SessionVideoAttacher`)? | **Skipped for MVP** — exercise-level videos cover the core use case |
+
 ## Goals
 - Implement in-app video recording using the MediaRecorder API
 - Build a reusable `RecordVideo` component for both Provider and Patient
@@ -7,7 +18,7 @@
 - Implement direct client-to-storage uploads using signed URLs
 - Build secure video playback components
 - Link videos to exercises (instructional for Provider, form-check for Patient)
-- Link videos to sessions (session-level attachments per SPEC)
+- ~~Link videos to sessions~~ — skipped for MVP (see Scoping Decisions)
 
 ## Supabase Storage Configuration
 
