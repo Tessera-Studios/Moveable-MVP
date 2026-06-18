@@ -10,7 +10,18 @@ export async function deletePatientAccount(): Promise<{ error: string } | never>
 
   const adminSupabase = createAdminClient();
 
-  // Delete form-check videos from storage and DB
+  // Delete the auth account FIRST — this is the gate. If it fails we abort
+  // before touching any data, so the account is never left half-deleted with
+  // a working login. public.users row stays (no CASCADE after migration).
+  const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(
+    auth.userId
+  );
+  if (deleteError) return { error: deleteError.message };
+
+  // Best-effort post-gate cleanup. The auth account is already gone and the
+  // user is being redirected with no way to retry, so failures here only leave
+  // orphaned storage objects — an accepted gap. Do NOT return errors or block
+  // the redirect past this point.
   const { data: videos } = await adminSupabase
     .from("videos")
     .select("storage_path")
@@ -18,22 +29,14 @@ export async function deletePatientAccount(): Promise<{ error: string } | never>
 
   if (videos && videos.length > 0) {
     const paths = videos.map((v) => v.storage_path);
-    const { error: storageError } = await adminSupabase.storage.from("exercise-videos").remove(paths);
-    if (storageError) return { error: storageError.message };
+    await adminSupabase.storage.from("exercise-videos").remove(paths);
     await adminSupabase.from("videos").delete().eq("uploader_id", auth.userId);
   }
 
-  // Unlink from provider so they no longer appear in the provider's roster
   await adminSupabase
     .from("users")
     .update({ provider_id: null })
     .eq("id", auth.userId);
-
-  // Delete auth account — public.users row stays (no CASCADE after migration)
-  const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(
-    auth.userId
-  );
-  if (deleteError) return { error: deleteError.message };
 
   redirect("/login");
 }
