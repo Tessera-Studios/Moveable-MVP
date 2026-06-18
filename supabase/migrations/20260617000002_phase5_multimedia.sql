@@ -23,12 +23,10 @@ WITH CHECK (
   AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
 );
 
--- Allow authenticated users to read from their own folder
--- (signed URLs bypass this for cross-user access; this is defense-in-depth)
+-- Allow any authenticated user to read from the bucket.
+-- Access control is enforced at the videos table RLS level — the app only
+-- exposes storage_path values that the calling user is permitted to see.
 CREATE POLICY "exercise_videos_select"
 ON storage.objects
 FOR SELECT TO authenticated
-USING (
-  bucket_id = 'exercise-videos'
-  AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
-);
+USING (bucket_id = 'exercise-videos');

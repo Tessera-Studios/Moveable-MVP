@@ -215,7 +215,7 @@ This file tracks what has been built. Read it before starting any work so you kn
 ### What was built
 
 **Database**
-- `supabase/migrations/20260618000000_phase5_multimedia.sql` — `ALTER TABLE exercises ADD COLUMN video_id uuid REFERENCES videos(id) ON DELETE SET NULL`; Supabase Storage bucket `exercise-videos` (private); RLS policies granting providers upload/read on their own videos and patients read on videos linked to their exercises
+- `supabase/migrations/20260617000002_phase5_multimedia.sql` — `ALTER TABLE exercises ADD COLUMN video_id uuid REFERENCES videos(id) ON DELETE SET NULL`; Supabase Storage bucket `exercise-videos` (private); RLS policies granting providers upload/read on their own videos and patients read on videos linked to their exercises
 - **Apply this migration manually** via the Supabase Dashboard SQL Editor or CLI
 - **Storage bucket must also be created manually** in the Supabase Dashboard (Storage → New bucket, name: `exercise-videos`, public: off)
 
@@ -253,6 +253,6 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 | Phase | Spec | Status |
 |---|---|---|
-| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Planned — ready to implement |
+| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Complete |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
 | 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |

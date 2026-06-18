@@ -35,7 +35,7 @@ export default async function SessionPage({
   const { data: exData } = await supabase
     .from("exercises")
     .select(
-      "id, session_template_id, name, sets, reps, patient_notes, sort_order"
+      "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id"
     )
     .eq("session_template_id", sessionId)
     .order("sort_order", { ascending: true });
