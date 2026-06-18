@@ -196,12 +196,38 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+---
+
+## Phase 5 — Multimedia (Planning Complete, Implementation Not Started)
+
+**Spec:** `docs/05-MULTIMEDIA.md`
+**Implementation plan:** `docs/superpowers/plans/2026-06-17-phase5-multimedia.md`
+
+### Scoping decisions (locked)
+- Both instructional videos (provider → exercise) and form-check videos (patient → exercise) in scope
+- Fail-fast upload error handling — no retry, no offline queue
+- Patient form-check videos surface as a dedicated "Videos" section at the bottom of the provider's patient detail page
+- Provider instructional videos are inline on each exercise row in the session template form (edit mode only; new unsaved exercises show a "save first" message)
+- Provider library Videos tab shows all provider-uploaded videos with exercise name labels
+- Session-level video attacher (`SessionVideoAttacher`) **skipped for MVP**
+
+### What still needs to be done (9 tasks in the plan)
+1. DB migration — `ALTER TABLE exercises ADD COLUMN video_id` + Supabase Storage bucket + RLS policies (bucket must be created manually in the dashboard)
+2. `lib/actions/videos.ts` — server actions: signed upload URL, metadata save, signed playback URL, instructional attach, provider/patient video queries
+3. `components/shared/RecordVideo.tsx` — MediaRecorder-based recording UI
+4. `components/shared/VideoPlayer.tsx` — signed-URL-based secure playback
+5. `components/provider/ExerciseVideoAttacher.tsx` — provider attaches/views instructional video per exercise row
+6. `ExerciseList.tsx` + edit session page update — add `video_id`/`video_storage_path` to `ExerciseFormItem`, load from DB
+7. `components/patient/PatientFormRecord.tsx` + `ExerciseExecutor.tsx` update — patient records form-check videos during session
+8. Provider patient detail page — add Videos section (form-check videos)
+9. Provider library page — replace Videos placeholder with real data
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
-| 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Complete |
-| 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Complete |
-| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Not started |
+| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Planned — ready to implement |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
 | 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
