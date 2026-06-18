@@ -29,7 +29,7 @@ export default async function TemplatesPage(): Promise<React.JSX.Element> {
     .eq("provider_id", user.id)
     .order("created_at", { ascending: false });
 
-  const rows = (templates ?? []) as TemplateRow[];
+  const rows = (templates ?? []) as unknown as TemplateRow[];
 
   return (
     <div className="px-5 pt-10 pb-6 flex flex-col gap-5">

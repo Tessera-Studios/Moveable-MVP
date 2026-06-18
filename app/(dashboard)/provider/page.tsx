@@ -75,7 +75,7 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
     .order("completed_at", { ascending: false })
     .limit(50);
 
-  const execs = (executions ?? []) as ExecutionRow[];
+  const execs = (executions ?? []) as unknown as ExecutionRow[];
 
   const sessionsThisWeek = execs.filter(
     (e) => e.completed_at && e.completed_at > weekAgo

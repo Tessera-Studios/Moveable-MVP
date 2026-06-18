@@ -78,7 +78,7 @@ export default async function PatientDetailPage({
 
   if (!patient) notFound();
 
-  const execs = (executions ?? []) as ExecutionRow[];
+  const execs = (executions ?? []) as unknown as ExecutionRow[];
 
   return (
     <div className="px-5 pt-10 pb-6 flex flex-col gap-5">
