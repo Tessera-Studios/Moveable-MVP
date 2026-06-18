@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState } from "react";
 
 interface UnreadCountContextValue {
   unreadCount: number;
-  setUnreadCount: (n: number) => void;
+  setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const UnreadCountContext = createContext<UnreadCountContextValue | null>(null);
