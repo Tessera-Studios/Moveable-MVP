@@ -135,12 +135,16 @@ export function RecordVideo({
     recorderRef.current?.stop();
   }
 
-  function handleUseRecording(): void {
+  async function handleUseRecording(): Promise<void> {
     if (!previewUrl) return;
-    const duration = elapsed;
-    fetch(previewUrl)
-      .then((r) => r.blob())
-      .then((blob) => onRecordingComplete(blob, duration));
+    try {
+      const r = await fetch(previewUrl);
+      const blob = await r.blob();
+      onRecordingComplete(blob, elapsed);
+    } catch {
+      setState("error");
+      setErrorMessage("Failed to process video. Please try again.");
+    }
   }
 
   function handleRetake(): void {
