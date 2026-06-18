@@ -80,56 +80,49 @@ export async function registerPatient(
   code: string
 ): Promise<{ error: string } | never> {
   const supabase = await createClient();
-
-  // Use admin client to bypass RLS — the user is unauthenticated at this point
   const adminSupabase = createAdminClient();
-  const { data: invite, error: lookupError } = await adminSupabase
-    .from("invitation_codes")
-    .select("provider_id, is_consumed, expires_at")
-    .eq("code", code.trim().toUpperCase())
-    .single();
 
-  if (lookupError || !invite) {
-    return { error: "Invalid invitation code." };
+  let providerId: string | null = null;
+
+  if (code.trim() !== "") {
+    const { data: invite, error: lookupError } = await adminSupabase
+      .from("invitation_codes")
+      .select("provider_id, is_consumed, expires_at")
+      .eq("code", code.trim().toUpperCase())
+      .single();
+
+    if (lookupError || !invite) {
+      return { error: "Invalid invitation code." };
+    }
+    if (invite.is_consumed) {
+      return { error: "This invitation code has already been used." };
+    }
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      return { error: "This invitation code has expired." };
+    }
+
+    providerId = invite.provider_id as string;
   }
 
-  if (invite.is_consumed) {
-    return { error: "This invitation code has already been used." };
-  }
-
-  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-    return { error: "This invitation code has expired." };
-  }
-
-  const { data, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (signUpError) {
-    return { error: signUpError.message };
-  }
-
-  if (!data.user) {
-    return { error: "Sign-up succeeded but no user was returned." };
-  }
+  const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+  if (signUpError) return { error: signUpError.message };
+  if (!data.user) return { error: "Sign-up succeeded but no user was returned." };
 
   const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
     email,
     role: "patient",
-    provider_id: invite.provider_id,
+    provider_id: providerId,
   });
 
-  if (insertError) {
-    return { error: insertError.message };
-  }
+  if (insertError) return { error: insertError.message };
 
-  // Mark code as consumed
-  await adminSupabase
-    .from("invitation_codes")
-    .update({ is_consumed: true })
-    .eq("code", code.trim().toUpperCase());
+  if (providerId) {
+    await adminSupabase
+      .from("invitation_codes")
+      .update({ is_consumed: true })
+      .eq("code", code.trim().toUpperCase());
+  }
 
   redirect("/patient");
 }

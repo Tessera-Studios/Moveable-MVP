@@ -127,11 +127,10 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
           <input
             id="code"
             type="text"
-            required
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             className={inputClass}
-            placeholder="XXXXXXXXXXXX"
+            placeholder="XXXXXXXXXXXX (optional)"
             spellCheck={false}
             autoCapitalize="characters"
           />
