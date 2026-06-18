@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@/lib/types";
+import { UnreadBadge } from "@/components/chat/UnreadBadge";
 
 interface BottomTabBarProps {
   role: UserRole;
@@ -13,6 +14,7 @@ interface Tab {
   label: string;
   path: string;
   icon: React.JSX.Element;
+  showBadge?: boolean;
 }
 
 function IconHome(): React.JSX.Element {
@@ -127,14 +129,14 @@ const PROVIDER_TABS: Tab[] = [
   { label: "Home", path: "/provider", icon: <IconHome /> },
   { label: "Patients", path: "/provider/patients", icon: <IconUsers /> },
   { label: "Templates", path: "/provider/templates", icon: <IconClipboard /> },
-  { label: "Messages", path: "/provider/messages", icon: <IconMessageCircle /> },
+  { label: "Messages", path: "/provider/chat", icon: <IconMessageCircle />, showBadge: true },
 ];
 
 const PATIENT_TABS: Tab[] = [
   { label: "Home", path: "/patient", icon: <IconHome /> },
   { label: "Exercises", path: "/patient/profile", icon: <IconActivity /> },
   { label: "Progress", path: "/patient/progress", icon: <IconTrendingUp /> },
-  { label: "Messages", path: "/patient/messages", icon: <IconMessageCircle /> },
+  { label: "Messages", path: "/patient/chat", icon: <IconMessageCircle />, showBadge: true },
 ];
 
 export default function BottomTabBar({ role }: BottomTabBarProps): React.JSX.Element {
@@ -161,8 +163,9 @@ export default function BottomTabBar({ role }: BottomTabBarProps): React.JSX.Ele
                 active ? "text-primary" : "text-placeholder"
               }`}
             >
-              <span className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+              <span className="min-w-[44px] min-h-[44px] flex items-center justify-center relative">
                 {tab.icon}
+                {tab.showBadge && <UnreadBadge />}
               </span>
               <span className="text-[10px] font-medium leading-none">
                 {tab.label}
