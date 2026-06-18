@@ -39,23 +39,22 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const isPublicRoute = PUBLIC_ROUTES.has(pathname);
 
-  if (!session && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
   }
 
-  if (session && isPublicRoute && pathname !== "/") {
-    const userId = session.user.id;
+  if (user && isPublicRoute && pathname !== "/") {
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("users")
       .select("role")
-      .eq("id", userId)
+      .eq("id", user.id)
       .single<Pick<Profile, "role">>();
 
     const destination =

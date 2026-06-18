@@ -9,9 +9,17 @@ export const ROUTES: {
   register: string;
   providerDashboard: string;
   patientDashboard: string;
+  providerPatients: string;
+  providerTemplates: string;
+  providerLibrary: string;
+  providerSessionNew: string;
 } = {
   login: "/login",
   register: "/register",
   providerDashboard: "/provider",
   patientDashboard: "/patient",
+  providerPatients: "/provider/patients",
+  providerTemplates: "/provider/templates",
+  providerLibrary: "/provider/library",
+  providerSessionNew: "/provider/sessions/new",
 };
