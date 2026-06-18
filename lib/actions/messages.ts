@@ -133,20 +133,23 @@ export async function getConversations(): Promise<
   }));
 }
 
-export async function markMessagesRead(otherUserId: string): Promise<void> {
+export async function markMessagesRead(
+  otherUserId: string
+): Promise<void | { error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Silently swallow errors — never block the user from reading messages.
-  await supabase
+  const { error } = await supabase
     .from("messages")
     .update({ is_read: true })
     .eq("receiver_id", user.id)
     .eq("sender_id", otherUserId)
     .eq("is_read", false);
+
+  if (error) return { error: error.message };
 }
 
 export async function getUnreadCount(): Promise<number> {

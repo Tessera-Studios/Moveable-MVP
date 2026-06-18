@@ -31,13 +31,28 @@ export function ChatWindow({
   const [channelStatus, setChannelStatus] = useState<string>("CONNECTING");
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const { setUnreadCount } = useUnreadCount();
+  const { unreadCount, setUnreadCount } = useUnreadCount();
+  // Keep a ref so the Realtime closure always sees the latest count without re-subscribing
+  const unreadCountRef = useRef(unreadCount);
+  useEffect(() => {
+    unreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
-  // Mark conversation as read on open
+  // Compute initial unread count for this conversation once on mount
+  const initialUnreadCount = React.useMemo(
+    () =>
+      initialMessages.filter(
+        (m) => m.receiver_id === currentUserId && !m.is_read
+      ).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [] // intentionally stable — only compute on mount
+  );
+
+  // Mark conversation as read on open; decrement global badge by this conversation's count only
   useEffect(() => {
     void markMessagesRead(otherUser.id);
-    setUnreadCount(0);
-  }, [otherUser.id, setUnreadCount]);
+    setUnreadCount(Math.max(0, unreadCountRef.current - initialUnreadCount));
+  }, [otherUser.id, setUnreadCount, initialUnreadCount]);
 
   // Set up Realtime channel
   useEffect(() => {
@@ -48,10 +63,27 @@ export function ChatWindow({
       .channel(channelId, { config: { broadcast: { ack: false } } })
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `or(and(sender_id=eq.${currentUserId},receiver_id=eq.${otherUser.id}),and(sender_id=eq.${otherUser.id},receiver_id=eq.${currentUserId}))`,
+        },
         (payload) => {
-          const msg = payload.new as Message;
-          // Filter to only messages in this conversation
+          // Validate payload shape before casting (M8)
+          const raw = payload.new as Record<string, unknown>;
+          if (
+            typeof raw.id !== "string" ||
+            typeof raw.sender_id !== "string" ||
+            typeof raw.receiver_id !== "string" ||
+            typeof raw.content !== "string" ||
+            typeof raw.created_at !== "string"
+          ) {
+            return;
+          }
+          const msg = raw as unknown as Message;
+
+          // Safety-net: JS-side conversation filter (primary filter is server-side above)
           const inConversation =
             (msg.sender_id === currentUserId && msg.receiver_id === otherUser.id) ||
             (msg.sender_id === otherUser.id && msg.receiver_id === currentUserId);
@@ -64,6 +96,7 @@ export function ChatWindow({
 
           if (msg.receiver_id === currentUserId) {
             void markMessagesRead(otherUser.id);
+            setUnreadCount(Math.max(0, unreadCountRef.current - 1));
           }
         }
       )
