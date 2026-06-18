@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { Avatar, Badge } from "@/components/ui";
 import { RemovePatientButton } from "./RemovePatientButton";
+import { ExportButton } from "./ExportButton";
 import Link from "next/link";
 
 interface PageProps {
@@ -195,7 +196,8 @@ export default async function PatientDetailPage({
         )}
       </section>
 
-      <div className="pt-2">
+      <div className="pt-2 flex flex-col gap-3">
+        <ExportButton patientId={patientId} />
         <RemovePatientButton patientId={patientId} />
       </div>
     </div>
