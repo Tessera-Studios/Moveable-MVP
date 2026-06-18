@@ -4,6 +4,9 @@ import { redirect, notFound } from "next/navigation";
 import { Avatar, Badge } from "@/components/ui";
 import { RemovePatientButton } from "./RemovePatientButton";
 import Link from "next/link";
+import { VideoPlayer } from "@/components/shared/VideoPlayer";
+import { getPatientVideosForProvider } from "@/lib/actions/videos";
+import type { PatientVideoRow } from "@/lib/actions/videos";
 
 interface PageProps {
   params: Promise<{ patientId: string }>;
@@ -43,40 +46,48 @@ export default async function PatientDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: patient }, { data: assignedSession }, { data: executions }] =
-    await Promise.all([
-      supabase
-        .from("users")
-        .select("id, email, created_at, provider_id")
-        .eq("id", patientId)
-        .eq("provider_id", user.id)
-        .single<{
-          id: string;
-          email: string | null;
-          created_at: string;
-          provider_id: string | null;
-        }>(),
-      supabase
-        .from("sessions_template")
-        .select(
-          "id, name, exercises(id, name, sets, reps, sort_order)"
-        )
-        .eq("patient_id", patientId)
-        .eq("provider_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<SessionRow>(),
-      supabase
-        .from("session_executions")
-        .select(
-          "id, status, completed_at, ease_score, pain_score, sessions_template(name)"
-        )
-        .eq("patient_id", patientId)
-        .order("completed_at", { ascending: false })
-        .limit(20),
-    ]);
+  const [
+    { data: patient },
+    { data: assignedSession },
+    { data: executions },
+    videosResult,
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, email, created_at, provider_id")
+      .eq("id", patientId)
+      .eq("provider_id", user.id)
+      .single<{
+        id: string;
+        email: string | null;
+        created_at: string;
+        provider_id: string | null;
+      }>(),
+    supabase
+      .from("sessions_template")
+      .select(
+        "id, name, exercises(id, name, sets, reps, sort_order)"
+      )
+      .eq("patient_id", patientId)
+      .eq("provider_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<SessionRow>(),
+    supabase
+      .from("session_executions")
+      .select(
+        "id, status, completed_at, ease_score, pain_score, sessions_template(name)"
+      )
+      .eq("patient_id", patientId)
+      .order("completed_at", { ascending: false })
+      .limit(20),
+    getPatientVideosForProvider(patientId),
+  ]);
 
   if (!patient) notFound();
+
+  const patientVideos: PatientVideoRow[] =
+    "error" in videosResult ? [] : videosResult;
 
   const execs = (executions ?? []) as unknown as ExecutionRow[];
 
@@ -189,6 +200,34 @@ export default async function PatientDetailPage({
                     {ex.status}
                   </Badge>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-semibold text-foreground mb-2">
+          Form-check videos ({patientVideos.length})
+        </h2>
+        {patientVideos.length === 0 ? (
+          <div className="bg-card rounded-card shadow-card p-4">
+            <p className="text-sm text-muted">
+              No form-check videos yet. The patient can record their form during sessions.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {patientVideos.map((video) => (
+              <div key={video.id} className="bg-card rounded-card shadow-card p-4">
+                <VideoPlayer
+                  storagePath={video.storage_path}
+                  label={
+                    video.exercise_name
+                      ? `${video.exercise_name} · ${new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                      : new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  }
+                />
               </div>
             ))}
           </div>
