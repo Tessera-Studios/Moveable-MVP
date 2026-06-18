@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Exercise, SessionTemplate } from "@/lib/types";
 import LogoutButton from "@/components/shared/LogoutButton";
+import ConnectProviderWidget from "@/components/patient/ConnectProviderWidget";
 
 export default async function PatientProfilePage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -160,6 +161,9 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
           </p>
         </div>
       )}
+
+      {/* Connect provider widget — only when unlinked */}
+      {!profile?.provider_id && <ConnectProviderWidget />}
 
       <LogoutButton />
     </div>
