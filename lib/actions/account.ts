@@ -37,3 +37,28 @@ export async function deletePatientAccount(): Promise<{ error: string } | never>
 
   redirect("/login");
 }
+
+export async function deleteProviderAccount(): Promise<{ error: string } | never> {
+  const auth = await requireRole("provider");
+  if ("error" in auth) return auth;
+
+  const adminSupabase = createAdminClient();
+
+  // Block deletion if any patients are still linked
+  const { count } = await adminSupabase
+    .from("users")
+    .select("*", { count: "exact", head: true })
+    .eq("provider_id", auth.userId);
+
+  if (count && count > 0) {
+    return { error: "Remove all your patients before deleting your account." };
+  }
+
+  // Delete auth account — all other data is preserved
+  const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(
+    auth.userId
+  );
+  if (deleteError) return { error: deleteError.message };
+
+  redirect("/login");
+}
