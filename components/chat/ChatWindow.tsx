@@ -50,7 +50,11 @@ export function ChatWindow({
 
   // Mark conversation as read on open; decrement global badge by this conversation's count only
   useEffect(() => {
-    void markMessagesRead(otherUser.id);
+    markMessagesRead(otherUser.id).then((result) => {
+      if (result && "error" in result) {
+        console.error("markMessagesRead failed:", result.error);
+      }
+    });
     setUnreadCount(Math.max(0, unreadCountRef.current - initialUnreadCount));
   }, [otherUser.id, setUnreadCount, initialUnreadCount]);
 
@@ -95,7 +99,11 @@ export function ChatWindow({
           });
 
           if (msg.receiver_id === currentUserId) {
-            void markMessagesRead(otherUser.id);
+            markMessagesRead(otherUser.id).then((result) => {
+              if (result && "error" in result) {
+                console.error("markMessagesRead failed:", result.error);
+              }
+            });
             setUnreadCount(Math.max(0, unreadCountRef.current - 1));
           }
         }
