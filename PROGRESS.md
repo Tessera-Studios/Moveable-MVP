@@ -301,7 +301,7 @@ This file tracks what has been built. Read it before starting any work so you kn
 - `supabase/migrations/20260618000000_phase6_chat.sql` — `is_read BOOLEAN NOT NULL DEFAULT false` column on `messages`; `ALTER PUBLICATION supabase_realtime ADD TABLE public.messages`; `messages_mark_read` UPDATE policy for receivers; `idx_messages_unread` partial index
 
 **Server Actions**
-- `lib/actions/messages.ts` — `sendMessage`, `getMessages` (cursor-paginated), `getConversations` (groups by other participant), `markMessagesRead` (silently swallowed), `getUnreadCount`
+- `lib/actions/messages.ts` — `sendMessage`, `getMessages` (cursor-paginated), `getConversations` (groups by other participant), `markMessagesRead` (returns `void | { error: string }`), `getUnreadCount`
 
 **Context**
 - `components/chat/UnreadCountProvider.tsx` — React context bridging server-fetched unread count to the fixed BottomTabBar and ChatWindow
@@ -315,8 +315,8 @@ This file tracks what has been built. Read it before starting any work so you kn
 - `TypingIndicator.tsx` — "Name is typing…" with 2s timeout
 - `MessageBubble.tsx` — sent/received styling, optimistic status, retry button
 - `MessageInput.tsx` — textarea + send, 300ms debounced typing broadcast, timer cleanup on unmount
-- `MessageList.tsx` — auto-scroll, scroll-position-preserving pagination, end-of-history marker
-- `ChatWindow.tsx` — Supabase Realtime channel (Postgres Changes + Broadcast + Presence), optimistic sends, reconnecting banner
+- `MessageList.tsx` — auto-scroll, scroll-position-preserving pagination, end-of-history marker; `useRef` guard prevents loadingMore race; `scrollTop <= 1` for high-DPI; prepend suppresses auto-scroll
+- `ChatWindow.tsx` — Supabase Realtime channel (Postgres Changes + Broadcast + Presence), optimistic sends, reconnecting banner; server-side filter on postgres_changes; per-conversation badge decrement; runtime payload field guards
 - `ChatList.tsx` — provider conversation list with unread counts
 
 **Tab Bar**
@@ -335,6 +335,7 @@ This file tracks what has been built. Read it before starting any work so you kn
 - Display name is patient/provider email (no separate name column in `users`)
 - No automated tests for Realtime delivery (requires two live WebSocket clients)
 - Media attachments not implemented
+- `getConversations()` fetches all messages with no LIMIT — tracked in [GitHub issue #3](https://github.com/Tessera-Studios/Moveable-MVP/issues/3); defer fix until pre-scale
 
 ---
 
