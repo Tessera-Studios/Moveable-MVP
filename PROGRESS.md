@@ -249,10 +249,43 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## Phase 7 — Document Export (Complete)
+
+**Completed:** 2026-06-18
+**Spec:** `docs/07-DOCUMENT-EXPORT.md`
+**Implementation plan:** `docs/superpowers/plans/2026-06-18-phase7-document-export.md`
+
+### What was built
+
+**API Route Handler**
+- `app/api/export/patient-stats/route.ts` — `GET /api/export/patient-stats?patientId=UUID&from=YYYY-MM-DD&to=YYYY-MM-DD`. Authenticates the requesting provider via `supabase.auth.getUser()`, verifies provider-patient ownership (`users.provider_id`), aggregates stats for the date range, generates a PDF buffer via PDFKit, and returns it with `Content-Type: application/pdf` and `Content-Disposition: attachment`. Unauthenticated requests → 401; unauthorized provider → 403; missing params → 400.
+
+**Data Aggregation** (inline in route handler)
+- `getExportStats(supabase, patientId, from, to)` — queries `session_executions` for the date range; computes `totalCompleted`, `avgEase`, `avgPain`, `complianceRate` (sessions / days in range), `streak` (all-time, UTC), and the 10 most recent sessions for the session log.
+
+**PDF Generation** (inline in route handler)
+- `generatePdf(patient, stats, from, to)` — builds a PDFKit document in memory (Buffer via stream events). Sections: header with title + generation date; patient info (email, report period, member since); summary metrics (total sessions, streak, compliance %); patient-reported scores (avg ease + avg pain); recent sessions log (up to 10 rows with date, ease, pain).
+
+**Provider UI**
+- `app/(dashboard)/provider/patients/[patientId]/ExportButton.tsx` — Client component with a "Export Statistics to PDF" button. On click, fetches the route handler, creates a blob URL, triggers a browser download (`patient-<id>-stats.pdf`), and revokes the URL. Shows an error toast on failure.
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — Updated to render `ExportButton` above the existing `RemovePatientButton`.
+
+**Dependencies added**
+- `pdfkit@^0.19.1` — Server-side PDF generation
+- `@types/pdfkit@^0.17.6` (devDependency) — TypeScript types for PDFKit
+
+### Known gaps
+- No export_logs / audit trail table (spec marks this optional for MVP)
+- Date range is hardcoded on the client to `2024-01-01 → today`; a future iteration could expose a date picker
+- Streak in the export is always calculated in UTC (no patient timezone available server-side for provider-initiated exports)
+- No automated tests for PDF output (spec E2E test E2 deferred)
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
 | 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Complete |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
-| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
+| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Complete |
