@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import PDFDocument from "pdfkit";
+import { calculateStreak, complianceRate, distinctLocalDays } from "@/lib/stats";
 
 interface ExportStats {
   totalCompleted: number;
@@ -14,26 +15,6 @@ interface ExportStats {
     ease_score: number | null;
     pain_score: number | null;
   }>;
-}
-
-function calculateStreak(completedDates: string[]): number {
-  if (completedDates.length === 0) return 0;
-  const dateSet = new Set(completedDates);
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "UTC" });
-  const yesterday = new Date(Date.now() - 86_400_000).toLocaleDateString("en-CA", {
-    timeZone: "UTC",
-  });
-  const startDate = dateSet.has(today) ? today : dateSet.has(yesterday) ? yesterday : null;
-  if (!startDate) return 0;
-  let streak = 0;
-  const cursor = new Date(startDate + "T12:00:00Z");
-  while (true) {
-    const ds = cursor.toLocaleDateString("en-CA", { timeZone: "UTC" });
-    if (!dateSet.has(ds)) break;
-    streak++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
 }
 
 async function getExportStats(
@@ -76,14 +57,13 @@ async function getExportStats(
   const daysInRange =
     Math.floor((toDate.getTime() - fromDate.getTime()) / 86_400_000) + 1;
   // Compliance = fraction of days in range with at least one completed session.
-  // Counting distinct days (not raw sessions) keeps the rate within 0–100% even
-  // when a patient completes multiple sessions on the same day.
-  const distinctCompletedDays = new Set(
-    sessions.map((s) =>
-      new Date(s.completed_at).toLocaleDateString("en-CA", { timeZone: "UTC" })
-    )
-  ).size;
-  const complianceRate = daysInRange > 0 ? distinctCompletedDays / daysInRange : 0;
+  // Distinct days (not raw sessions) keep the rate within 0–100% even when a
+  // patient completes multiple sessions on the same day.
+  const distinctCompletedDays = distinctLocalDays(
+    sessions.map((s) => s.completed_at),
+    "UTC"
+  ).length;
+  const rate = complianceRate(distinctCompletedDays, daysInRange);
 
   const { data: allRows } = await supabase
     .from("session_executions")
@@ -92,16 +72,17 @@ async function getExportStats(
     .eq("status", "completed")
     .not("completed_at", "is", null);
 
-  const allDates = (allRows ?? []).map((r: { completed_at: string }) =>
-    new Date(r.completed_at).toLocaleDateString("en-CA", { timeZone: "UTC" })
+  const allDates = distinctLocalDays(
+    (allRows ?? []).map((r: { completed_at: string }) => r.completed_at),
+    "UTC"
   );
-  const streak = calculateStreak(allDates);
+  const streak = calculateStreak(allDates, "UTC");
 
   return {
     totalCompleted,
     avgEase,
     avgPain,
-    complianceRate,
+    complianceRate: rate,
     streak,
     recentSessions: sessions.slice(0, 10),
   };

@@ -1,46 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { calculateStreak, toLocalDate } from "@/lib/stats";
 import type { PatientStats } from "@/lib/types";
-
-function toLocalDate(utcDate: string, timezone: string): string {
-  return new Date(utcDate).toLocaleDateString("en-CA", { timeZone: timezone });
-}
-
-function calculateStreak(
-  completedDates: string[],
-  timezone: string
-): number {
-  if (completedDates.length === 0) return 0;
-
-  const dateSet = new Set(completedDates);
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: timezone });
-  const yesterday = new Date(Date.now() - 86_400_000).toLocaleDateString(
-    "en-CA",
-    { timeZone: timezone }
-  );
-
-  // Streak must include today or yesterday to be active
-  const startDate = dateSet.has(today)
-    ? today
-    : dateSet.has(yesterday)
-      ? yesterday
-      : null;
-
-  if (!startDate) return 0;
-
-  let streak = 0;
-  const cursor = new Date(startDate + "T12:00:00");
-
-  while (true) {
-    const ds = cursor.toLocaleDateString("en-CA", { timeZone: timezone });
-    if (!dateSet.has(ds)) break;
-    streak++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  return streak;
-}
 
 export async function completeSession(
   sessionTemplateId: string,
