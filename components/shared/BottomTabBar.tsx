@@ -132,7 +132,7 @@ const PROVIDER_TABS: Tab[] = [
 
 const PATIENT_TABS: Tab[] = [
   { label: "Home", path: "/patient", icon: <IconHome /> },
-  { label: "Exercises", path: "/patient/exercises", icon: <IconActivity /> },
+  { label: "Exercises", path: "/patient/profile", icon: <IconActivity /> },
   { label: "Progress", path: "/patient/progress", icon: <IconTrendingUp /> },
   { label: "Messages", path: "/patient/messages", icon: <IconMessageCircle /> },
 ];

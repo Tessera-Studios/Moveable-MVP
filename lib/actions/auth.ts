@@ -62,6 +62,7 @@ export async function registerProvider(
   const adminSupabase = createAdminClient();
   const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
+    email,
     role: "provider",
     provider_id: null,
   });
@@ -115,6 +116,7 @@ export async function registerPatient(
 
   const { error: insertError } = await adminSupabase.from("users").insert({
     id: data.user.id,
+    email,
     role: "patient",
     provider_id: invite.provider_id,
   });
