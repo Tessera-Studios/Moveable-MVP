@@ -1,7 +1,9 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUnreadCount } from "@/lib/actions/messages";
 import BottomTabBar from "@/components/shared/BottomTabBar";
+import { UnreadCountProvider } from "@/components/chat/UnreadCountProvider";
 import type { Profile } from "@/lib/types";
 
 export default async function DashboardLayout({
@@ -19,16 +21,21 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id, role, provider_id, created_at")
-    .eq("id", user.id)
-    .single<Profile>();
+  const [{ data: profile }, unreadCount] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, role, provider_id, created_at")
+      .eq("id", user.id)
+      .single<Profile>(),
+    getUnreadCount(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-[512px] mx-auto pb-20">{children}</main>
-      <BottomTabBar role={profile?.role ?? "patient"} />
+      <UnreadCountProvider initialCount={unreadCount}>
+        <main className="max-w-[512px] mx-auto pb-20">{children}</main>
+        <BottomTabBar role={profile?.role ?? "patient"} />
+      </UnreadCountProvider>
     </div>
   );
 }
