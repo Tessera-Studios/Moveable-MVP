@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 /** Cookie name used to relay the client's IANA timezone to Server Components. */
 export const TIMEZONE_COOKIE = "tz";
 
@@ -15,14 +13,4 @@ export function isValidTimezone(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-/**
- * Reads the client's timezone from the request cookie set by `TimezoneSync`.
- * Falls back to "UTC" when the cookie is absent (first load) or invalid.
- */
-export async function getRequestTimezone(): Promise<string> {
-  const store = await cookies();
-  const value = store.get(TIMEZONE_COOKIE)?.value;
-  return value && isValidTimezone(value) ? value : "UTC";
 }

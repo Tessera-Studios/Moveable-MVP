@@ -5,7 +5,7 @@ import StreakBanner from "@/components/patient/StreakBanner";
 import ActiveSessionCard from "@/components/patient/ActiveSessionCard";
 import ProgressPreview from "@/components/patient/ProgressPreview";
 import { getPatientStats } from "@/lib/actions/executions";
-import { getRequestTimezone } from "@/lib/timezone";
+import { getRequestTimezone } from "@/lib/timezone.server";
 import type { SessionTemplate, Exercise } from "@/lib/types";
 import { EmptyState } from "@/components/ui";
 

@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPatientStats } from "@/lib/actions/executions";
-import { getRequestTimezone } from "@/lib/timezone";
+import { getRequestTimezone } from "@/lib/timezone.server";
 import ProgressCharts from "@/components/patient/ProgressCharts";
 
 async function ProgressContent(): Promise<React.JSX.Element> {
