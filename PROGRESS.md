@@ -196,12 +196,96 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+---
+
+## Phase 5 — Multimedia (Complete)
+
+**Completed:** 2026-06-18
+**Spec:** `docs/05-MULTIMEDIA.md`
+**Implementation plan:** `docs/superpowers/plans/2026-06-17-phase5-multimedia.md`
+
+### Scoping decisions (locked)
+- Both instructional videos (provider → exercise) and form-check videos (patient → exercise) in scope
+- Fail-fast upload error handling — no retry, no offline queue
+- Patient form-check videos surface as a dedicated "Videos" section at the bottom of the provider's patient detail page
+- Provider instructional videos are inline on each exercise row in the session template form (edit mode only; new unsaved exercises show a "save first" message)
+- Provider library Videos tab shows all provider-uploaded videos with exercise name labels
+- Session-level video attacher (`SessionVideoAttacher`) **skipped for MVP**
+
+### What was built
+
+**Database**
+- `supabase/migrations/20260617000002_phase5_multimedia.sql` — `ALTER TABLE exercises ADD COLUMN video_id uuid REFERENCES videos(id) ON DELETE SET NULL`; Supabase Storage bucket `exercise-videos` (private); RLS policies granting providers upload/read on their own videos and patients read on videos linked to their exercises
+- **Apply this migration manually** via the Supabase Dashboard SQL Editor or CLI
+- **Storage bucket must also be created manually** in the Supabase Dashboard (Storage → New bucket, name: `exercise-videos`, public: off)
+
+**Server Actions**
+- `lib/actions/videos.ts` — `getUploadUrl(filename, contentType)` returns a signed upload URL; `saveVideoMetadata(storagePath, exerciseId?)` inserts a row into `videos`; `getSignedPlaybackUrl(storagePath)` returns a short-lived signed URL for playback; `attachInstructionalVideo(exerciseId, videoId)` sets `exercises.video_id`; `getProviderVideos()` returns all videos uploaded by the current provider joined to exercise name; `getPatientFormVideos(patientId)` returns form-check videos for a given patient
+
+**Shared Components**
+- `components/shared/RecordVideo.tsx` — Client component using the `MediaRecorder` API; camera/mic permission request, record/stop/retake/confirm flow, uploads via signed URL, calls `saveVideoMetadata` on confirm; shows inline error on permission denial or upload failure
+- `components/shared/VideoPlayer.tsx` — Server-compatible client component; fetches a signed playback URL via `getSignedPlaybackUrl` on mount, renders a native `<video>` element with controls; accepts `storagePath` and optional `label`
+
+**Provider Components**
+- `components/provider/ExerciseVideoAttacher.tsx` — Client component rendered per exercise row in edit mode; shows camera button when no video is attached, renders `VideoPlayer` inline when a video is attached; new (unsaved) exercises display "Save the exercise first to attach an instructional video."
+- `app/(dashboard)/provider/sessions/ExerciseList.tsx` — Updated `ExerciseFormItem` to include `video_id` and `video_storage_path`; renders `ExerciseVideoAttacher` below each exercise's fields
+- `app/(dashboard)/provider/sessions/[sessionId]/edit/page.tsx` — Updated exercise fetch to include `video_id` and `videos(storage_path)`
+
+**Patient Components**
+- `components/patient/PatientFormRecord.tsx` — Client component with a "Record my form" button per exercise; opens `RecordVideo` inline; shows success confirmation after upload
+- `components/patient/ExerciseExecutor.tsx` — Updated to render `PatientFormRecord` below each exercise's set-completion UI
+
+**Provider Patient Detail**
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — Added "Form-check videos" section at the bottom; calls `getPatientFormVideos(patientId)` and renders each via `VideoPlayer`
+
+**Provider Library**
+- `app/(dashboard)/provider/library/page.tsx` — Replaced "Video library coming soon" placeholder with a live list; calls `getProviderVideos()` in parallel with the exercises query; renders each video via `VideoPlayer` with exercise name label and upload date; shows `EmptyState` when none
+
+### Known gaps
+- DB migration must be applied manually (no CLI configured)
+- Storage bucket `exercise-videos` must be created manually in the Supabase Dashboard
+- `MediaRecorder` codec support varies by browser; Safari on iOS uses `video/mp4` while Chrome uses `video/webm` — the upload URL `contentType` is derived from the recorder's `mimeType` at runtime, so playback depends on the browser supporting the recorded format
+- No automated tests for video upload/playback flow
+
+---
+
+## Phase 7 — Document Export (Complete)
+
+**Completed:** 2026-06-18
+**Spec:** `docs/07-DOCUMENT-EXPORT.md`
+**Implementation plan:** `docs/superpowers/plans/2026-06-18-phase7-document-export.md`
+
+### What was built
+
+**API Route Handler**
+- `app/api/export/patient-stats/route.ts` — `GET /api/export/patient-stats?patientId=UUID&from=YYYY-MM-DD&to=YYYY-MM-DD`. Authenticates the requesting provider via `supabase.auth.getUser()`, verifies provider-patient ownership (`users.provider_id`), aggregates stats for the date range, generates a PDF buffer via PDFKit, and returns it with `Content-Type: application/pdf` and `Content-Disposition: attachment`. Unauthenticated requests → 401; unauthorized provider → 403; missing params → 400.
+
+**Data Aggregation** (inline in route handler)
+- `getExportStats(supabase, patientId, from, to)` — queries `session_executions` for the date range; computes `totalCompleted`, `avgEase`, `avgPain`, `complianceRate` (sessions / days in range), `streak` (all-time, UTC), and the 10 most recent sessions for the session log.
+
+**PDF Generation** (inline in route handler)
+- `generatePdf(patient, stats, from, to)` — builds a PDFKit document in memory (Buffer via stream events). Sections: header with title + generation date; patient info (email, report period, member since); summary metrics (total sessions, streak, compliance %); patient-reported scores (avg ease + avg pain); recent sessions log (up to 10 rows with date, ease, pain).
+
+**Provider UI**
+- `app/(dashboard)/provider/patients/[patientId]/ExportButton.tsx` — Client component with a "Export Statistics to PDF" button. On click, fetches the route handler, creates a blob URL, triggers a browser download (`patient-<id>-stats.pdf`), and revokes the URL. Shows an error toast on failure.
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — Updated to render `ExportButton` above the existing `RemovePatientButton`.
+
+**Dependencies added**
+- `pdfkit@^0.19.1` — Server-side PDF generation
+- `@types/pdfkit@^0.17.6` (devDependency) — TypeScript types for PDFKit
+
+### Known gaps
+- No export_logs / audit trail table (spec marks this optional for MVP)
+- Date range is hardcoded on the client to `2024-01-01 → today`; a future iteration could expose a date picker
+- Streak in the export is always calculated in UTC (no patient timezone available server-side for provider-initiated exports)
+- No automated tests for PDF output (spec E2E test E2 deferred)
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
 |---|---|---|
-| 3 — Provider Interface | `docs/03-PROVIDER-INTERFACE.md` | Complete |
-| 4 — Patient Interface | `docs/04-PATIENT-INTERFACE.md` | Complete |
-| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Not started |
+| 5 — Multimedia | `docs/05-MULTIMEDIA.md` | Complete |
 | 6 — Realtime Chat | `docs/06-REALTIME-CHAT.md` | Not started |
-| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Not started |
+| 7 — Document Export | `docs/07-DOCUMENT-EXPORT.md` | Complete |
