@@ -21,6 +21,8 @@ interface SessionRow {
     reps: number;
     patient_notes: string | null;
     sort_order: number;
+    video_id: string | null;
+    videos: { storage_path: string } | null;
   }[];
 }
 
@@ -39,7 +41,7 @@ export default async function EditSessionPage({
     supabase
       .from("sessions_template")
       .select(
-        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order)"
+        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order, video_id, videos(storage_path))"
       )
       .eq("id", sessionId)
       .eq("provider_id", user.id)
@@ -64,6 +66,8 @@ export default async function EditSessionPage({
       reps: ex.reps,
       patient_notes: ex.patient_notes ?? "",
       sort_order: ex.sort_order,
+      video_id: ex.video_id,
+      video_storage_path: ex.videos?.storage_path ?? null,
     }));
 
   return (

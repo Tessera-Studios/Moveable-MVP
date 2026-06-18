@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useId } from "react";
+import { ExerciseVideoAttacher } from "@/components/provider/ExerciseVideoAttacher";
 import {
   DndContext,
   closestCenter,
@@ -27,6 +28,8 @@ export interface ExerciseFormItem {
   patient_notes: string;
   sort_order: number;
   isNew?: boolean;
+  video_id: string | null;
+  video_storage_path: string | null;
 }
 
 interface ExerciseListProps {
@@ -188,6 +191,18 @@ function SortableRow({
           className="w-full rounded-sm border border-border px-3 py-2 text-sm text-foreground bg-background placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary resize-none"
         />
       </div>
+
+      {item.isNew ? (
+        <p className="text-xs text-muted">Save the exercise first to attach an instructional video.</p>
+      ) : (
+        <ExerciseVideoAttacher
+          exerciseId={item.id}
+          videoStoragePath={item.video_storage_path}
+          onVideoAttached={(videoId, storagePath) =>
+            onChange({ ...item, video_id: videoId, video_storage_path: storagePath })
+          }
+        />
+      )}
     </div>
   );
 }

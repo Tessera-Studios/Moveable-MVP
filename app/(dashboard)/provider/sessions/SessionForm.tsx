@@ -42,6 +42,8 @@ function newExercise(sortOrder: number): ExerciseFormItem {
     patient_notes: "",
     sort_order: sortOrder,
     isNew: true,
+    video_id: null,
+    video_storage_path: null,
   };
 }
 
