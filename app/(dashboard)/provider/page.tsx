@@ -8,6 +8,8 @@ import InvitationCodeWidget from "./InvitationCodeWidget";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import LogoutButton from "@/components/shared/LogoutButton";
+import DeleteAccountButton from "@/components/shared/DeleteAccountButton";
+import { deleteProviderAccount } from "@/lib/actions/account";
 
 interface PatientRow {
   id: string;
@@ -158,6 +160,20 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
       </section>
 
       <LogoutButton />
+
+      {/* Danger zone */}
+      <div className="bg-card rounded-card shadow-card p-5 mb-6">
+        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-1">
+          Danger Zone
+        </p>
+        <p className="text-sm text-placeholder mb-4">
+          You must remove all patients before deleting your account.
+        </p>
+        <DeleteAccountButton
+          action={deleteProviderAccount}
+          confirmationMessage="This will permanently delete your account. Your patients' session history will be kept. This cannot be undone."
+        />
+      </div>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Exercise, SessionTemplate } from "@/lib/types";
 import LogoutButton from "@/components/shared/LogoutButton";
 import ConnectProviderWidget from "@/components/patient/ConnectProviderWidget";
+import DeleteAccountButton from "@/components/shared/DeleteAccountButton";
+import { deletePatientAccount } from "@/lib/actions/account";
 
 export default async function PatientProfilePage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -166,6 +168,17 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
       {!profile?.provider_id && <ConnectProviderWidget />}
 
       <LogoutButton />
+
+      {/* Danger zone */}
+      <div className="bg-card rounded-card shadow-card p-5">
+        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-4">
+          Danger Zone
+        </p>
+        <DeleteAccountButton
+          action={deletePatientAccount}
+          confirmationMessage="This will permanently delete your account and your recorded videos. Your session history will be kept. This cannot be undone."
+        />
+      </div>
     </div>
   );
 }
