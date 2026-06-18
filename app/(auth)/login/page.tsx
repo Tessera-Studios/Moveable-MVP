@@ -55,7 +55,7 @@ export default function LoginPage(): React.JSX.Element {
       <div className="max-w-[400px] w-full mx-auto px-5 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-primary mb-1">
-            Moveable
+            Move Able
           </h1>
           <p className="text-muted text-base">Track your recovery.</p>
         </div>

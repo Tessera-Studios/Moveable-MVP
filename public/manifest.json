@@ -1,6 +1,6 @@
 {
-  "name": "Moveable",
-  "short_name": "Moveable",
+  "name": "Move Able",
+  "short_name": "Move Able",
   "description": "Physical therapy, tracked and connected.",
   "start_url": "/",
   "display": "standalone",
