@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Button } from "@/components/ui";
+import { Modal } from "@/components/ui";
 import { RecordVideo } from "@/components/shared/RecordVideo";
 import { VideoPlayer } from "@/components/shared/VideoPlayer";
 import {
