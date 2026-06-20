@@ -23,13 +23,8 @@ interface SessionRow {
     patient_notes: string | null;
     sort_order: number;
     video_id: string | null;
-    videos: { storage_path: string } | null;
   }[];
 }
-
-type SessionRowBasic = Omit<SessionRow, "exercises"> & {
-  exercises: Omit<SessionRow["exercises"][0], "video_id" | "videos">[];
-};
 
 export default async function EditSessionPage({
   params,
@@ -46,7 +41,7 @@ export default async function EditSessionPage({
     supabase
       .from("sessions_template")
       .select(
-        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order, video_id, videos(storage_path))"
+        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order, video_id)"
       )
       .eq("id", sessionId)
       .eq("provider_id", user.id)
@@ -58,35 +53,26 @@ export default async function EditSessionPage({
       .eq("role", "patient"),
   ]);
 
-  let session: SessionRow | null = sessionResult.data;
-
-  // If the query errored (e.g. Phase 5 migration not yet applied and video_id column is
-  // absent), fall back to a query without video fields so the editor still loads.
-  if (!session && sessionResult.error) {
-    const { data: fallback } = await supabase
-      .from("sessions_template")
-      .select(
-        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order)"
-      )
-      .eq("id", sessionId)
-      .eq("provider_id", user.id)
-      .single<SessionRowBasic>();
-
-    if (fallback) {
-      session = {
-        ...fallback,
-        exercises: fallback.exercises.map((ex) => ({
-          ...ex,
-          video_id: null,
-          videos: null,
-        })),
-      };
-    }
-  }
-
+  const session = sessionResult.data;
   if (!session) notFound();
 
   const patients = (patientsRaw ?? []) as { id: string; email: string | null }[];
+
+  // Phase 2: fetch storage paths for exercises that have a video attached
+  const videoIds = (session.exercises ?? [])
+    .map((ex) => ex.video_id)
+    .filter((id): id is string => id !== null);
+
+  const videoPathMap = new Map<string, string>();
+  if (videoIds.length > 0) {
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("id, storage_path")
+      .in("id", videoIds);
+    for (const v of videos ?? []) {
+      videoPathMap.set(v.id as string, v.storage_path as string);
+    }
+  }
 
   const exercises: ExerciseFormItem[] = (session.exercises ?? [])
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -98,7 +84,7 @@ export default async function EditSessionPage({
       patient_notes: ex.patient_notes ?? "",
       sort_order: ex.sort_order,
       video_id: ex.video_id,
-      video_storage_path: ex.videos?.storage_path ?? null,
+      video_storage_path: ex.video_id ? (videoPathMap.get(ex.video_id) ?? null) : null,
     }));
 
   return (

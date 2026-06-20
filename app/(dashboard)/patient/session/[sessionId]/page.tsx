@@ -35,12 +35,15 @@ export default async function SessionPage({
   const { data: exData } = await supabase
     .from("exercises")
     .select(
-      "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id"
+      "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id, videos(storage_path)"
     )
     .eq("session_template_id", sessionId)
     .order("sort_order", { ascending: true });
 
-  const allExercises = (exData ?? []) as Exercise[];
+  const allExercises: Exercise[] = (exData ?? []).map((row) => {
+    const { videos, ...rest } = row as typeof row & { videos: { storage_path: string } | null };
+    return { ...rest, video_storage_path: videos?.storage_path ?? null };
+  });
 
   // Apply client-provided ordering from the dashboard drag-and-drop
   let exercises = allExercises;

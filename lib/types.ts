@@ -33,6 +33,7 @@ export interface Exercise {
   patient_notes: string | null;
   sort_order: number;
   video_id: string | null;
+  video_storage_path?: string | null;
 }
 
 export interface SessionExecution {

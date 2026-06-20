@@ -44,6 +44,8 @@ export function RecordVideo({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [elapsed, setElapsed] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [toggleError, setToggleError] = useState<string>("");
 
   useEffect(() => {
     return () => {
@@ -53,7 +55,7 @@ export function RecordVideo({
     };
   }, [previewUrl]);
 
-  const startCamera = useCallback(async (): Promise<void> => {
+  const startCamera = useCallback(async (mode: "user" | "environment" = "user"): Promise<void> => {
     if (!isRecordingSupported()) {
       setState("error");
       setErrorMessage(
@@ -65,7 +67,7 @@ export function RecordVideo({
     setState("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: mode },
         audio: true,
       });
       streamRef.current = stream;
@@ -82,8 +84,33 @@ export function RecordVideo({
   }, []);
 
   useEffect(() => {
-    void startCamera();
+    void startCamera("user");
   }, [startCamera]);
+
+  async function handleToggleCamera(): Promise<void> {
+    setToggleError("");
+    const next = facingMode === "user" ? "environment" : "user";
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: next },
+        audio: true,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setFacingMode(next);
+      setState("idle");
+    } catch {
+      // New facing mode not available — fall back to original
+      setToggleError("Back camera not available on this device.");
+      await startCamera(facingMode);
+    }
+  }
 
   function startRecording(): void {
     if (!streamRef.current) return;
@@ -196,11 +223,29 @@ export function RecordVideo({
         )}
       </div>
 
+      {toggleError && (
+        <p className="text-sm text-error bg-red-50 rounded-sm px-3 py-2">{toggleError}</p>
+      )}
+
       <div className="flex gap-3">
         {state === "idle" && (
-          <Button type="button" variant="primary" className="w-full" onClick={startRecording}>
-            Start Recording
-          </Button>
+          <>
+            <button
+              type="button"
+              onClick={handleToggleCamera}
+              aria-label="Switch camera"
+              className="flex items-center justify-center w-11 h-11 rounded-full border border-border bg-card text-muted hover:text-foreground transition-colors flex-shrink-0"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 7h-3a2 2 0 00-2-2H9a2 2 0 00-2 2H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+                <circle cx="12" cy="13" r="3" />
+                <path d="M8 7V5" />
+              </svg>
+            </button>
+            <Button type="button" variant="primary" className="flex-1" onClick={startRecording}>
+              Start Recording
+            </Button>
+          </>
         )}
         {state === "recording" && (
           <Button type="button" variant="danger" className="w-full" onClick={stopRecording}>

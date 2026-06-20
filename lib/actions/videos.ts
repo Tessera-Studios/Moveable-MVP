@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/actions/auth";
 import { randomUUID } from "crypto";
 
@@ -43,8 +44,10 @@ export async function getUploadUrl(
 
 export async function saveVideoMetadata(
   storagePath: string,
-  exerciseId?: string
+  exerciseId: string
 ): Promise<{ id: string } | { error: string }> {
+  if (!exerciseId) return { error: "exerciseId is required." };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -56,7 +59,7 @@ export async function saveVideoMetadata(
     .insert({
       uploader_id: user.id,
       storage_path: storagePath,
-      exercise_id: exerciseId ?? null,
+      exercise_id: exerciseId,
     })
     .select("id")
     .single<{ id: string }>();
@@ -129,7 +132,19 @@ export async function getPatientVideosForProvider(
   const auth = await requireRole("provider");
   if ("error" in auth) return auth;
 
-  const { data, error } = await auth.supabase
+  // Verify the patient belongs to this provider before fetching their videos
+  const { data: patientRow } = await auth.supabase
+    .from("users")
+    .select("id")
+    .eq("id", patientId)
+    .eq("provider_id", auth.userId)
+    .single<{ id: string }>();
+
+  if (!patientRow) return { error: "Patient not found or not assigned to you." };
+
+  // Use admin client to bypass RLS — authorization already verified above
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("videos")
     .select("id, storage_path, created_at, exercises(name)")
     .eq("uploader_id", patientId)

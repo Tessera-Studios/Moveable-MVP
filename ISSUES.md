@@ -2,7 +2,7 @@
 
 This is a list of issues that need to be addressed before the MVP is ready for launch.
 
-- [x] Issue: After recording a video for an exercise, you are returned to the patients list without being able to save the video after about 2 seconds.
-- [x] Issue: If you managed to press save video before the redirect happens, you get an error saying "The related resource does not exist"
-- [x] UI: The % badge on the provider's patients screen does not match what shows for the same patient on the provider dashboard.
-
+- [x] UI: "Add another exercise" button should also be at the bottom of the list, not the top.
+- [x] UI: On mobile, should be able to use the back camera as well as the front camera, if present.
+- [x] UI: Patients can't see the video the provider uploaded for the exercise. When editing the session again, the exercises have the "attach a video" prompt, which implies that when saved, the videos did not stay attached to the exercise.
+- [x] UI: When a patient does a form check video, for an exercise, the video is not visible in the provider's patient detail page.

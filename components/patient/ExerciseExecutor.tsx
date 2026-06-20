@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Exercise } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { PatientFormRecord } from "@/components/patient/PatientFormRecord";
+import { VideoPlayer } from "@/components/shared/VideoPlayer";
 
 interface ExerciseExecutorProps {
   sessionId: string;
@@ -174,6 +175,10 @@ export default function ExerciseExecutor({
               {exercise.sets} sets · {exercise.reps} reps each
             </p>
           </div>
+
+          {exercise.video_storage_path && (
+            <VideoPlayer storagePath={exercise.video_storage_path} label="Instructional video" />
+          )}
 
           {exercise.patient_notes && (
             <div className="bg-primary-light rounded-sm px-4 py-3">

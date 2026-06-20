@@ -332,7 +332,16 @@ export function SessionForm({
             Tap to add the first exercise
           </button>
         ) : (
-          <ExerciseList items={exercises} onChange={setExercises} />
+          <>
+            <ExerciseList items={exercises} onChange={setExercises} />
+            <button
+              type="button"
+              onClick={addNewExercise}
+              className="mt-3 w-full border-2 border-dashed border-border rounded-card py-3 text-sm text-muted hover:border-primary hover:text-primary transition-colors"
+            >
+              + Add exercise
+            </button>
+          </>
         )}
       </section>
 
