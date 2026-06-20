@@ -2,5 +2,9 @@
 
 This is a list of issues that need to be addressed before the MVP is ready for launch.
 
-- [x] Patient Assignment: `public.users` had no `email` column; every provider query selecting `email` failed silently and returned null. Fixed by adding the column via migration `20260617000001_add_email_to_users.sql` and writing `email` on both `registerProvider` and `registerPatient` inserts. **Note: apply the migration in the Supabase Dashboard SQL Editor before testing.**
-- [x] Exercises tab icon: The Exercises tab linked to `/patient/exercises`, which redirects to `/patient/profile`, so the active-state check never matched. Fixed by pointing the tab directly to `/patient/profile`.
+- [x] UI: The invitation code should be more obvious that it's optional, by making it the last field for the sign up form, and the optional tag should be in the label, not the placeholder.
+- [x] UI: The password field should have a "Show" button that reveals the password.
+- [x] UI: There should be a Profile screen, where the user's email, role, connect with provider, sign out, and danger zone are, as opposed to being on the exercises page for the Patient page. And similarly for the Provider.
+- [x] UI: Editing a session is a blank page.
+- [x] UI: There's no way to save an exercise without saving the session.
+- [x] UI: When a session is saved, editing doesn't work, but the patient can see the session, but not the exercises themselves.
