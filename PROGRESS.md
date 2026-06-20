@@ -243,7 +243,7 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ### Known gaps
 - DB migration must be applied manually (no CLI configured)
-- Storage bucket `exercise-videos` must be created manually in the Supabase Dashboard
+- **Storage bucket `exercise-videos` MUST be created manually** in the Supabase Dashboard (Storage → New bucket, name: `exercise-videos`, public: off). If the bucket does not exist, every video upload attempt — both provider instructional videos and patient form-check recordings — will fail with "The related resource does not exist". This is a deployment prerequisite, not a code issue.
 - `MediaRecorder` codec support varies by browser; Safari on iOS uses `video/mp4` while Chrome uses `video/webm` — the upload URL `contentType` is derived from the recorder's `mimeType` at runtime, so playback depends on the browser supporting the recorded format
 - No automated tests for video upload/playback flow
 

@@ -110,6 +110,11 @@ export default function ExerciseExecutor({
   const [completedSets, setCompletedSets] = useState<Record<string, number>>(
     {}
   );
+  const [uploadingCount, setUploadingCount] = useState(0);
+
+  function handleUploadingChange(uploading: boolean): void {
+    setUploadingCount((n) => Math.max(0, n + (uploading ? 1 : -1)));
+  }
 
   const exercise = exercises[currentIndex];
   const setsCompleted = completedSets[exercise.id] ?? 0;
@@ -184,7 +189,7 @@ export default function ExerciseExecutor({
             onComplete={handleSetComplete}
           />
 
-          <PatientFormRecord exerciseId={exercise.id} />
+          <PatientFormRecord exerciseId={exercise.id} onUploadingChange={handleUploadingChange} />
 
           {exerciseDone && (
             <div className="flex flex-col gap-2">
@@ -211,8 +216,10 @@ export default function ExerciseExecutor({
             size="lg"
             className="w-full"
             onClick={handleFinish}
+            loading={uploadingCount > 0}
+            disabled={uploadingCount > 0}
           >
-            Finish Session
+            {uploadingCount > 0 ? "Uploading video…" : "Finish Session"}
           </Button>
         </div>
       )}

@@ -8,6 +8,7 @@ import InvitationCodeWidget from "./InvitationCodeWidget";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { UnreadBadge } from "@/components/chat/UnreadBadge";
+import { complianceRate, calculateStreak, distinctLocalDays } from "@/lib/stats";
 
 interface PatientRow {
   id: string;
@@ -22,30 +23,6 @@ interface ExecutionRow {
   sessions_template: { name: string } | null;
 }
 
-function computeStreak(
-  executions: { completed_at: string | null }[]
-): number {
-  const days = executions
-    .filter((e) => e.completed_at)
-    .map((e) => {
-      const d = new Date(e.completed_at!);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    })
-    .sort((a, b) => b - a);
-
-  const unique = [...new Set(days)];
-  let streak = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (let i = 0; i < unique.length; i++) {
-    const expected = today.getTime() - i * 86400000;
-    if (unique[i] === expected) streak++;
-    else break;
-  }
-  return streak;
-}
 
 export default async function ProviderDashboardPage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -84,13 +61,16 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
 
   const patientsWithStats = patients.map((p) => {
     const patientExecs = execs.filter((e) => e.patient_id === p.id);
-    const streak = computeStreak(patientExecs);
+    const allTimestamps = patientExecs.map((e) => e.completed_at!);
+    const last7Timestamps = patientExecs
+      .filter((e) => e.completed_at! > weekAgo)
+      .map((e) => e.completed_at!);
+    const allDistinctDays = distinctLocalDays(allTimestamps, "UTC");
+    const last7DistinctDays = distinctLocalDays(last7Timestamps, "UTC");
+    const streak = calculateStreak(allDistinctDays, "UTC");
     const last_active =
       patientExecs.length > 0 ? patientExecs[0].completed_at : null;
-    const compliance_rate =
-      patientExecs.length > 0
-        ? Math.min(100, Math.round((patientExecs.length / 7) * 100))
-        : 0;
+    const compliance_rate = Math.round(complianceRate(last7DistinctDays.length, 7) * 100);
     return { ...p, streak, last_active, compliance_rate };
   });
 

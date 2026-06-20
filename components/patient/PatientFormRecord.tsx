@@ -9,10 +9,12 @@ type RecordState = "idle" | "uploading" | "done" | "error";
 
 interface PatientFormRecordProps {
   exerciseId: string;
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 export function PatientFormRecord({
   exerciseId,
+  onUploadingChange,
 }: PatientFormRecordProps): React.JSX.Element {
   const [modalOpen, setModalOpen] = useState(false);
   const [recordState, setRecordState] = useState<RecordState>("idle");
@@ -20,11 +22,13 @@ export function PatientFormRecord({
 
   async function handleRecordingComplete(blob: Blob, _duration: number): Promise<void> {
     setRecordState("uploading");
+    onUploadingChange?.(true);
     setErrorMessage("");
 
     const uploadUrlResult = await getUploadUrl(exerciseId);
     if ("error" in uploadUrlResult) {
       setRecordState("error");
+      onUploadingChange?.(false);
       setErrorMessage(uploadUrlResult.error);
       return;
     }
@@ -39,6 +43,7 @@ export function PatientFormRecord({
 
     if (!uploadResponse.ok) {
       setRecordState("error");
+      onUploadingChange?.(false);
       setErrorMessage(`Upload failed (${uploadResponse.status}). Please try again.`);
       return;
     }
@@ -46,11 +51,13 @@ export function PatientFormRecord({
     const metaResult = await saveVideoMetadata(storagePath, exerciseId);
     if ("error" in metaResult) {
       setRecordState("error");
+      onUploadingChange?.(false);
       setErrorMessage(metaResult.error);
       return;
     }
 
     setRecordState("done");
+    onUploadingChange?.(false);
   }
 
   function handleClose(): void {
@@ -75,7 +82,7 @@ export function PatientFormRecord({
 
       <Modal
         open={modalOpen}
-        onClose={handleClose}
+        onClose={recordState === "uploading" ? () => {} : handleClose}
         title="Record your form"
         size="lg"
       >

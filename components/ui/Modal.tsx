@@ -68,6 +68,7 @@ export function Modal({
               {title}
             </h2>
             <button
+              type="button"
               onClick={onClose}
               aria-label="Close dialog"
               className="flex items-center justify-center w-8 h-8 rounded-full text-muted hover:text-foreground hover:bg-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"

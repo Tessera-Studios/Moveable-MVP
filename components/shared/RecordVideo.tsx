@@ -198,21 +198,21 @@ export function RecordVideo({
 
       <div className="flex gap-3">
         {state === "idle" && (
-          <Button variant="primary" className="w-full" onClick={startRecording}>
+          <Button type="button" variant="primary" className="w-full" onClick={startRecording}>
             Start Recording
           </Button>
         )}
         {state === "recording" && (
-          <Button variant="danger" className="w-full" onClick={stopRecording}>
+          <Button type="button" variant="danger" className="w-full" onClick={stopRecording}>
             Stop Recording
           </Button>
         )}
         {state === "recorded" && (
           <>
-            <Button variant="secondary" className="flex-1" onClick={handleRetake}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={handleRetake}>
               Retake
             </Button>
-            <Button variant="primary" className="flex-1" onClick={handleUseRecording}>
+            <Button type="button" variant="primary" className="flex-1" onClick={handleUseRecording}>
               Use This Video
             </Button>
           </>
