@@ -1,7 +1,6 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Exercise, SessionTemplate } from "@/lib/types";
 import LogoutButton from "@/components/shared/LogoutButton";
 import ConnectProviderWidget from "@/components/patient/ConnectProviderWidget";
 import DeleteAccountButton from "@/components/shared/DeleteAccountButton";
@@ -15,34 +14,13 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [profileResult, sessionsResult] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id, role, provider_id, created_at")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("sessions_template")
-      .select("id, name, patient_id, provider_id, created_at")
-      .eq("patient_id", user.id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const { data: profileData } = await supabase
+    .from("users")
+    .select("id, role, provider_id, created_at")
+    .eq("id", user.id)
+    .single();
 
-  const profile = profileResult.data;
-  const sessions = (sessionsResult.data ?? []) as SessionTemplate[];
-
-  const sessionIds = sessions.map((s) => s.id);
-  let exercises: Exercise[] = [];
-  if (sessionIds.length > 0) {
-    const { data: exData } = await supabase
-      .from("exercises")
-      .select(
-        "id, session_template_id, name, sets, reps, patient_notes, sort_order"
-      )
-      .in("session_template_id", sessionIds)
-      .order("sort_order", { ascending: true });
-    exercises = (exData ?? []) as Exercise[];
-  }
+  const profile = profileData;
 
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString("en-US", {
@@ -92,42 +70,6 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Exercise list */}
-      <div className="bg-card rounded-card shadow-card p-5">
-        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-3">
-          Your Exercises
-        </p>
-
-        {exercises.length === 0 ? (
-          <p className="text-sm text-placeholder">No exercises assigned yet.</p>
-        ) : (
-          <div>
-            {exercises.map((ex, i) => (
-              <div
-                key={ex.id}
-                className={`flex items-center gap-3 py-3 ${
-                  i < exercises.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center shrink-0">
-                  <span className="text-xs font-semibold text-muted">
-                    {i + 1}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {ex.name}
-                  </p>
-                  <p className="text-xs text-placeholder">
-                    {ex.sets} sets · {ex.reps} reps
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Provider info */}
