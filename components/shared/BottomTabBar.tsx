@@ -125,18 +125,36 @@ function IconMessageCircle(): React.JSX.Element {
   );
 }
 
+function IconUser(): React.JSX.Element {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
 const PROVIDER_TABS: Tab[] = [
   { label: "Home", path: "/provider", icon: <IconHome /> },
   { label: "Patients", path: "/provider/patients", icon: <IconUsers /> },
   { label: "Templates", path: "/provider/templates", icon: <IconClipboard /> },
-  { label: "Messages", path: "/provider/chat", icon: <IconMessageCircle />, showBadge: true },
+  { label: "Profile", path: "/provider/profile", icon: <IconUser /> },
 ];
 
 const PATIENT_TABS: Tab[] = [
   { label: "Home", path: "/patient", icon: <IconHome /> },
-  { label: "Exercises", path: "/patient/profile", icon: <IconActivity /> },
+  { label: "Exercises", path: "/patient/exercises", icon: <IconActivity /> },
   { label: "Progress", path: "/patient/progress", icon: <IconTrendingUp /> },
-  { label: "Messages", path: "/patient/chat", icon: <IconMessageCircle />, showBadge: true },
+  { label: "Profile", path: "/patient/profile", icon: <IconUser /> },
 ];
 
 export default function BottomTabBar({ role }: BottomTabBarProps): React.JSX.Element {
