@@ -80,8 +80,43 @@ export function SessionForm({
   const [error, setError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  function addNewExercise(): void {
-    setExercises((prev) => [...prev, newExercise(prev.length)]);
+  async function addNewExercise(): Promise<void> {
+    if (mode === "edit" && sessionId) {
+      const sortOrder = exercises.length;
+      const tempId = `new-${Date.now()}-${Math.random()}`;
+      // Add optimistically so the row appears immediately
+      setExercises((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          name: "New exercise",
+          sets: 3,
+          reps: 10,
+          patient_notes: "",
+          sort_order: sortOrder,
+          video_id: null,
+          video_storage_path: null,
+        },
+      ]);
+      const result = await addExercise(sessionId, {
+        name: "New exercise",
+        sets: 3,
+        reps: 10,
+        patient_notes: null,
+        sort_order: sortOrder,
+      });
+      if ("error" in result) {
+        setExercises((prev) => prev.filter((e) => e.id !== tempId));
+        setError(result.error);
+      } else {
+        // Swap temp ID for the real DB UUID — video attachment now works
+        setExercises((prev) =>
+          prev.map((e) => (e.id === tempId ? { ...e, id: result.id } : e))
+        );
+      }
+    } else {
+      setExercises((prev) => [...prev, newExercise(prev.length)]);
+    }
   }
 
   function handleSubmit(e: React.FormEvent): void {
