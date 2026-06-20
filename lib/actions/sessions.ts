@@ -45,11 +45,23 @@ export async function updateSessionTemplate(
 
   if (!data.name.trim()) return { error: "Session name is required." };
 
+  if (!data.patient_id) return { error: "Patient is required." };
+
+  // Verify the patient belongs to this provider before reassigning.
+  const { data: patient } = await auth.supabase
+    .from("users")
+    .select("id")
+    .eq("id", data.patient_id)
+    .eq("provider_id", auth.userId)
+    .single<{ id: string }>();
+  if (!patient) return { error: "Patient not found or not assigned to you." };
+
   const { error } = await auth.supabase
     .from("sessions_template")
     .update({
       name: data.name.trim(),
       provider_notes: data.provider_notes ?? null,
+      patient_id: data.patient_id,
     })
     .eq("id", id)
     .eq("provider_id", auth.userId);

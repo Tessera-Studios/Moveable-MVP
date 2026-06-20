@@ -27,6 +27,10 @@ interface SessionRow {
   }[];
 }
 
+type SessionRowBasic = Omit<SessionRow, "exercises"> & {
+  exercises: Omit<SessionRow["exercises"][0], "video_id" | "videos">[];
+};
+
 export default async function EditSessionPage({
   params,
 }: PageProps): Promise<React.JSX.Element> {
@@ -38,7 +42,7 @@ export default async function EditSessionPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: session }, { data: patientsRaw }] = await Promise.all([
+  const [sessionResult, { data: patientsRaw }] = await Promise.all([
     supabase
       .from("sessions_template")
       .select(
@@ -53,6 +57,32 @@ export default async function EditSessionPage({
       .eq("provider_id", user.id)
       .eq("role", "patient"),
   ]);
+
+  let session: SessionRow | null = sessionResult.data;
+
+  // If the query errored (e.g. Phase 5 migration not yet applied and video_id column is
+  // absent), fall back to a query without video fields so the editor still loads.
+  if (!session && sessionResult.error) {
+    const { data: fallback } = await supabase
+      .from("sessions_template")
+      .select(
+        "id, name, patient_id, provider_notes, exercises(id, name, sets, reps, patient_notes, sort_order)"
+      )
+      .eq("id", sessionId)
+      .eq("provider_id", user.id)
+      .single<SessionRowBasic>();
+
+    if (fallback) {
+      session = {
+        ...fallback,
+        exercises: fallback.exercises.map((ex) => ({
+          ...ex,
+          video_id: null,
+          videos: null,
+        })),
+      };
+    }
+  }
 
   if (!session) notFound();
 
