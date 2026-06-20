@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import PDFDocument from "pdfkit";
 import { calculateStreak, complianceRate, distinctLocalDays } from "@/lib/stats";
 
+export const runtime = "nodejs";
+
 interface ExportStats {
   totalCompleted: number;
   avgEase: number;

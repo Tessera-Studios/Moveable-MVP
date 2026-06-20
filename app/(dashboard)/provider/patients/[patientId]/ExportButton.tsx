@@ -29,8 +29,8 @@ export function ExportButton({ patientId }: ExportButtonProps): React.JSX.Elemen
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
-      toast({ message: "Export failed. Please try again.", type: "error" });
+    } catch (err) {
+      toast({ message: err instanceof Error ? err.message : "Export failed. Please try again.", type: "error" });
     } finally {
       setExporting(false);
     }
