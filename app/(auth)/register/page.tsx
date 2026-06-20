@@ -50,29 +50,23 @@ function ProviderSignup(): React.JSX.Element {
         </Field>
 
         <Field label="Password" htmlFor="password">
-          <input
+          <PasswordField
             id="password"
-            type="password"
             autoComplete="new-password"
-            required
             minLength={8}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
+            onChange={setPassword}
             placeholder="Min. 8 characters"
           />
         </Field>
 
         <Field label="Confirm password" htmlFor="confirm-password">
-          <input
+          <PasswordField
             id="confirm-password"
-            type="password"
             autoComplete="new-password"
-            required
             minLength={8}
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={inputClass}
+            onChange={setConfirmPassword}
             placeholder="Re-enter your password"
           />
         </Field>
@@ -137,29 +131,23 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
         </Field>
 
         <Field label="Password" htmlFor="password-patient">
-          <input
+          <PasswordField
             id="password-patient"
-            type="password"
             autoComplete="new-password"
-            required
             minLength={8}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
+            onChange={setPassword}
             placeholder="Min. 8 characters"
           />
         </Field>
 
         <Field label="Confirm password" htmlFor="confirm-password-patient">
-          <input
+          <PasswordField
             id="confirm-password-patient"
-            type="password"
             autoComplete="new-password"
-            required
             minLength={8}
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={inputClass}
+            onChange={setConfirmPassword}
             placeholder="Re-enter your password"
           />
         </Field>
@@ -298,5 +286,46 @@ function SubmitButton({
     >
       {loading ? "Please wait…" : label}
     </button>
+  );
+}
+
+function PasswordField({
+  id,
+  autoComplete,
+  minLength,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  autoComplete?: string;
+  minLength?: number;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}): React.JSX.Element {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        autoComplete={autoComplete}
+        required
+        minLength={minLength}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${inputClass} pr-16`}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted font-medium"
+      >
+        {show ? "Hide" : "Show"}
+      </button>
+    </div>
   );
 }
