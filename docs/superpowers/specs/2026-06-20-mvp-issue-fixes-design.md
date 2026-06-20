@@ -52,8 +52,9 @@ time they fill it from a shared link. Putting it last makes the critical path
 
 ### Issue 2: Password show/hide toggle
 
-**Scope:** All `type="password"` inputs across `register/page.tsx` (3 inputs:
-password + confirm × 2 forms) and `login/page.tsx` (1 input).
+**Scope:** All `type="password"` inputs across `register/page.tsx` (4 inputs:
+password + confirm in both `ProviderSignup` and `PatientSignup`) and `login/page.tsx`
+(1 input).
 
 **Implementation:** Add a `PasswordField` component inline in `register/page.tsx`
 (not a new shared file — login already has its own inline structure). The component:
@@ -194,20 +195,39 @@ a video." The only path to a real ID is saving the entire session.
 **Fix:** In **edit mode only**, when the user clicks "+ Add exercise" in `SessionForm`,
 immediately call `addExercise(sessionId, {...})` server action to persist the exercise
 and get a real UUID back. Replace the temp entry in local state with the returned ID.
-The exercise is then no longer `isNew`, and video attachment works immediately.
+Video attachment works immediately once the exercise has a real UUID.
 
 **Detail:**
 - `addNewExercise()` in `SessionForm` currently just does `setExercises(...)` with a
-  temp ID. In edit mode, change it to an async function that calls `addExercise` and
-  updates state with the real ID on success.
-- If `addExercise` fails (e.g., blank name), fall back to the current local-only
-  behavior and show an inline error; the user can still fill in the name and save the
-  full session.
-- Create mode is unchanged — exercises batch-save with the session.
+  temp ID (`"new-${Date.now()}-${Math.random()}"`). In edit mode, change it to an
+  async function that calls `addExercise` and swaps the temp entry for the real ID
+  on success. If `addExercise` fails (e.g., network error), keep the temp entry in
+  state and show an inline error — the user can retry or save the full session later.
+- Create mode is unchanged — exercises batch-save with the session on submit.
 
-**Also fix:** In edit mode `handleSubmit`, the `await Promise.all([...toAdd, ...toUpdate, ...toDelete])` 
-call currently discards all return values. Add error checking: collect any `{ error }` 
-results and surface them via `setError`. This prevents silent exercise-save failures 
+**Edit-mode `handleSubmit` save logic — drop `isNew`, use ID prefix as sentinel:**
+
+The current code uses `isNew: boolean` to categorize exercises, which breaks when
+an exercise is immediately persisted (its `isNew` flag is cleared but its UUID is
+not in `originalIds`, so it falls through both `toAdd` and `toUpdate`). Replace
+the categorization with:
+
+```
+// Exercises whose ID still starts with "new-" have never been persisted
+const toAdd    = exercises.filter(e => e.id.startsWith("new-"));
+
+// All real UUIDs need an update call (covers original AND immediately-persisted)
+const toUpdate = exercises.filter(e => !e.id.startsWith("new-"));
+
+// Any original ID no longer present in the list should be deleted
+const toDelete = [...originalIds].filter(id => !exercises.some(e => e.id === id));
+```
+
+This eliminates the `isNew` field from `ExerciseFormItem` entirely in edit-mode logic.
+
+**Also fix:** Collect and surface errors from the `Promise.all` calls in edit mode.
+Currently all return values are discarded. Add error checking: collect any `{ error }`
+results and surface them via `setError`. This prevents silent exercise-save failures
 that cause issue 6.
 
 ---
@@ -221,18 +241,15 @@ Group C issue 5 handles the silent failure) **and** possibly
 **Root cause:** The RLS policy `exercises_patient` exists and is structurally correct
 (verified in migration `20260617000000_phase2_schema.sql`). The actual gap is in
 `SessionForm` edit mode: `Promise.all([...toAdd.map(addExercise)])` does not check
-return values, so exercises with empty names (or other validation failures) silently
-fail to persist. The session template is updated but the exercises table stays empty.
+return values, so exercises with validation failures silently fail to persist. The
+session template is updated but the exercises table stays empty.
 
-**Fix (Group C already covers it):** Adding error-result checks to the edit-mode
-`handleSubmit` (Group C Issue 5 fix) resolves this. Group D is therefore dependent
-on Group C completing first, but requires no additional file changes beyond what
-Group C produces.
+**Fix (Group C already covers it):** The ID-prefix sentinel fix and error-result
+checking added by Group C's Issue 5 resolution covers this entirely. Group D requires
+no additional file changes — it is resolved as a side-effect of Group C.
 
-**Secondary check:** The patient session execution page
-`app/(dashboard)/patient/session/[sessionId]/page.tsx` should also be verified — if
-the exercises array is empty it may render incorrectly (a blank exercise list instead
-of an empty state). Add an `EmptyState` guard if the exercises array is empty.
+**Note:** `app/(dashboard)/patient/session/[sessionId]/page.tsx` already has an
+empty-exercises guard at line 68 ("No exercises in this session."). No change needed.
 
 ---
 
