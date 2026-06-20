@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { calculateStreak, toLocalDate } from "@/lib/stats";
 import type { PatientStats } from "@/lib/types";
@@ -75,10 +76,14 @@ export async function completeSession(
   const dates = (allCompletions ?? [])
     .map((c) => toLocalDate(c.completed_at!, timezone));
 
-  return {
+  const result = {
     streak: calculateStreak(dates, timezone),
     totalCompleted: dates.length,
   };
+
+  revalidatePath("/patient", "layout");
+
+  return result;
 }
 
 export async function getPatientStats(
