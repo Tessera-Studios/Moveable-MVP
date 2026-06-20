@@ -34,7 +34,7 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
     (user.user_metadata?.full_name as string | undefined) ?? nameFromEmail;
 
   return (
-    <div className="flex flex-col gap-4 px-5 pt-6 pb-6">
+    <div className="flex flex-col gap-4 px-5 pt-6 pb-6 min-h-[calc(100vh-80px)]">
       {/* Profile header */}
       <div className="bg-card rounded-card shadow-card p-5">
         <div className="flex items-center gap-4 mb-4">
@@ -92,11 +92,8 @@ export default async function PatientProfilePage(): Promise<React.JSX.Element> {
 
       <LogoutButton />
 
-      {/* Danger zone */}
-      <div className="bg-card rounded-card shadow-card p-5">
-        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-4">
-          Danger Zone
-        </p>
+      {/* Danger zone — small, pinned to the bottom */}
+      <div className="mt-auto flex flex-col items-center pt-6">
         <DeleteAccountButton
           action={deletePatientAccount}
           confirmationMessage="This will permanently delete your account and your recorded videos. Your session history will be kept. This cannot be undone."

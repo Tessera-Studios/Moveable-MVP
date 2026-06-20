@@ -37,7 +37,7 @@ export default function DeleteAccountButton({
           setError(null);
           setOpen(true);
         }}
-        className="w-full h-12 rounded-button bg-red-500 text-white font-medium hover:bg-red-600 transition-colors"
+        className="mx-auto px-4 h-9 rounded-button text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
       >
         Delete Account
       </button>

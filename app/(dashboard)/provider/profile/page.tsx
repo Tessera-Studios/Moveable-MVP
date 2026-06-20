@@ -29,7 +29,7 @@ export default async function ProviderProfilePage(): Promise<React.JSX.Element> 
   const nameFromEmail = user.email?.split("@")[0] ?? "Provider";
 
   return (
-    <div className="flex flex-col gap-4 px-5 pt-6 pb-6">
+    <div className="flex flex-col gap-4 px-5 pt-6 pb-6 min-h-[calc(100vh-80px)]">
       <div className="bg-card rounded-card shadow-card p-5">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center shrink-0">
@@ -61,11 +61,8 @@ export default async function ProviderProfilePage(): Promise<React.JSX.Element> 
 
       <LogoutButton />
 
-      <div className="bg-card rounded-card shadow-card p-5">
-        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-1">
-          Danger Zone
-        </p>
-        <p className="text-sm text-placeholder mb-4">
+      <div className="mt-auto flex flex-col items-center gap-1.5 pt-6">
+        <p className="text-xs text-placeholder text-center">
           You must remove all patients before deleting your account.
         </p>
         <DeleteAccountButton
