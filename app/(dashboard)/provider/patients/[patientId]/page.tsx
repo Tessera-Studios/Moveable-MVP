@@ -6,8 +6,9 @@ import { RemovePatientButton } from "./RemovePatientButton";
 import { ExportButton } from "./ExportButton";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/shared/VideoPlayer";
-import { getPatientVideosForProvider } from "@/lib/actions/videos";
-import type { PatientVideoRow } from "@/lib/actions/videos";
+import { getPatientVideosForProvider, getProviderFormCheckVideosForPatient } from "@/lib/actions/videos";
+import type { PatientVideoRow, ProviderFormCheckVideoRow } from "@/lib/actions/videos";
+import { ProviderFormRecord } from "@/components/provider/ProviderFormRecord";
 
 interface PageProps {
   params: Promise<{ patientId: string }>;
@@ -52,6 +53,7 @@ export default async function PatientDetailPage({
     { data: assignedSession },
     { data: executions },
     videosResult,
+    providerFormCheckResult,
   ] = await Promise.all([
     supabase
       .from("users")
@@ -83,12 +85,16 @@ export default async function PatientDetailPage({
       .order("completed_at", { ascending: false })
       .limit(20),
     getPatientVideosForProvider(patientId),
+    getProviderFormCheckVideosForPatient(patientId),
   ]);
 
   if (!patient) notFound();
 
   const patientVideos: PatientVideoRow[] =
     "error" in videosResult ? [] : videosResult;
+
+  const providerFormCheckVideos: ProviderFormCheckVideoRow[] =
+    "error" in providerFormCheckResult ? [] : providerFormCheckResult;
 
   const execs = (executions ?? []) as unknown as ExecutionRow[];
 
@@ -140,12 +146,15 @@ export default async function PatientDetailPage({
                 .map((ex) => (
                   <div
                     key={ex.id}
-                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                    className="flex flex-col py-2 border-b border-border last:border-0"
                   >
-                    <span className="text-sm text-foreground">{ex.name}</span>
-                    <span className="text-xs text-muted">
-                      {ex.sets}×{ex.reps}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-foreground">{ex.name}</span>
+                      <span className="text-xs text-muted">
+                        {ex.sets}×{ex.reps}
+                      </span>
+                    </div>
+                    <ProviderFormRecord exerciseId={ex.id} patientId={patientId} />
                   </div>
                 ))}
             </div>
@@ -220,6 +229,34 @@ export default async function PatientDetailPage({
         ) : (
           <div className="flex flex-col gap-4">
             {patientVideos.map((video) => (
+              <div key={video.id} className="bg-card rounded-card shadow-card p-4">
+                <VideoPlayer
+                  storagePath={video.storage_path}
+                  label={
+                    video.exercise_name
+                      ? `${video.exercise_name} · ${new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                      : new Date(video.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-semibold text-foreground mb-2">
+          Your form-check videos ({providerFormCheckVideos.length})
+        </h2>
+        {providerFormCheckVideos.length === 0 ? (
+          <div className="bg-card rounded-card shadow-card p-4">
+            <p className="text-sm text-muted">
+              No form-check videos recorded yet.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {providerFormCheckVideos.map((video) => (
               <div key={video.id} className="bg-card rounded-card shadow-card p-4">
                 <VideoPlayer
                   storagePath={video.storage_path}

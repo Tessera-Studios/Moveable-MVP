@@ -126,6 +126,113 @@ export async function getProviderVideos(): Promise<
   }));
 }
 
+export interface ProviderFormCheckVideoRow {
+  id: string;
+  storage_path: string;
+  created_at: string;
+  exercise_name: string | null;
+}
+
+export async function saveProviderFormCheckVideo(
+  patientId: string,
+  exerciseId: string,
+  storagePath: string
+): Promise<{ id: string } | { error: string }> {
+  const auth = await requireRole("provider");
+  if ("error" in auth) return auth;
+
+  const { data: patientRow } = await auth.supabase
+    .from("users")
+    .select("id")
+    .eq("id", patientId)
+    .eq("provider_id", auth.userId)
+    .single<{ id: string }>();
+
+  if (!patientRow) return { error: "Patient not found or not assigned to you." };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("videos")
+    .insert({
+      uploader_id: auth.userId,
+      storage_path: storagePath,
+      exercise_id: exerciseId,
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (error || !data) return { error: error?.message ?? "Failed to save video metadata." };
+  return { id: data.id };
+}
+
+export async function getProviderFormCheckVideosForPatient(
+  patientId: string
+): Promise<ProviderFormCheckVideoRow[] | { error: string }> {
+  const auth = await requireRole("provider");
+  if ("error" in auth) return auth;
+
+  const { data: patientRow } = await auth.supabase
+    .from("users")
+    .select("id")
+    .eq("id", patientId)
+    .eq("provider_id", auth.userId)
+    .single<{ id: string }>();
+
+  if (!patientRow) return { error: "Patient not found or not assigned to you." };
+
+  const admin = createAdminClient();
+
+  const { data: sessionRow } = await admin
+    .from("sessions_template")
+    .select("id")
+    .eq("patient_id", patientId)
+    .eq("provider_id", auth.userId)
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+
+  if (!sessionRow) return [];
+
+  const { data: exercises, error: exerciseError } = await admin
+    .from("exercises")
+    .select("id, name, video_id")
+    .eq("session_template_id", sessionRow.id);
+
+  if (exerciseError) return { error: exerciseError.message };
+  if (!exercises || exercises.length === 0) return [];
+
+  const exerciseIds = exercises.map((e) => e.id as string);
+
+  const { data: videos, error: videosError } = await admin
+    .from("videos")
+    .select("id, storage_path, created_at, exercise_id")
+    .eq("uploader_id", auth.userId)
+    .in("exercise_id", exerciseIds)
+    .order("created_at", { ascending: false });
+
+  if (videosError) return { error: videosError.message };
+
+  const instructionalVideoIds = new Set(
+    exercises
+      .filter((e) => e.video_id)
+      .map((e) => e.video_id as string)
+  );
+
+  const exerciseNameMap = new Map(
+    exercises.map((e) => [e.id as string, e.name as string])
+  );
+
+  const formCheckVideos = (videos ?? []).filter(
+    (v) => !instructionalVideoIds.has(v.id as string)
+  );
+
+  return formCheckVideos.map((v) => ({
+    id: v.id as string,
+    storage_path: v.storage_path as string,
+    created_at: v.created_at as string,
+    exercise_name: v.exercise_id ? (exerciseNameMap.get(v.exercise_id as string) ?? null) : null,
+  }));
+}
+
 export async function getPatientVideosForProvider(
   patientId: string
 ): Promise<PatientVideoRow[] | { error: string }> {

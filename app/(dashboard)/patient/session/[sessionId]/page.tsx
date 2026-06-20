@@ -2,6 +2,7 @@ import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ExerciseExecutor from "@/components/patient/ExerciseExecutor";
+import { VideoPlayer } from "@/components/shared/VideoPlayer";
 import type { SessionTemplate, Exercise } from "@/lib/types";
 
 interface Props {
@@ -62,6 +63,30 @@ export default async function SessionPage({
     }
   }
 
+  const exerciseVideoIdSet = new Set(
+    exerciseRows.filter((e) => e.video_id).map((e) => e.video_id as string)
+  );
+
+  interface ProviderVideoEntry {
+    id: string;
+    storage_path: string;
+    created_at: string;
+    exercise_id: string | null;
+  }
+
+  let providerFormCheckVideos: ProviderVideoEntry[] = [];
+  if (exerciseRows.length > 0) {
+    const { data: allVideos } = await supabase
+      .from("videos")
+      .select("id, storage_path, created_at, exercise_id")
+      .in("exercise_id", exerciseRows.map((e) => e.id))
+      .order("created_at", { ascending: false });
+
+    providerFormCheckVideos = (allVideos ?? []).filter(
+      (v) => !exerciseVideoIdSet.has(v.id as string)
+    ) as ProviderVideoEntry[];
+  }
+
   const allExercises: Exercise[] = exerciseRows.map((row) => ({
     ...row,
     video_storage_path: row.video_id
@@ -98,6 +123,23 @@ export default async function SessionPage({
         </div>
       ) : (
         <ExerciseExecutor sessionId={sessionId} exercises={exercises} />
+      )}
+
+      {providerFormCheckVideos.length > 0 && (
+        <section className="px-5 py-4">
+          <h2 className="text-base font-semibold text-foreground mb-3">
+            Provider form-check videos
+          </h2>
+          <div className="flex flex-col gap-4">
+            {providerFormCheckVideos.map((video) => (
+              <VideoPlayer
+                key={video.id}
+                storagePath={video.storage_path}
+                label={exercises.find((e) => e.id === video.exercise_id)?.name ?? "Exercise"}
+              />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );
