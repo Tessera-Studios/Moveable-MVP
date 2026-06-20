@@ -123,19 +123,6 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label="Invitation code" htmlFor="code">
-          <input
-            id="code"
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className={inputClass}
-            placeholder="XXXXXXXXXXXX (optional)"
-            spellCheck={false}
-            autoCapitalize="characters"
-          />
-        </Field>
-
         <Field label="Email" htmlFor="email">
           <input
             id="email"
@@ -149,9 +136,9 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
           />
         </Field>
 
-        <Field label="Password" htmlFor="password">
+        <Field label="Password" htmlFor="password-patient">
           <input
-            id="password"
+            id="password-patient"
             type="password"
             autoComplete="new-password"
             required
@@ -174,6 +161,19 @@ function PatientSignup({ initialCode }: { initialCode: string }): React.JSX.Elem
             onChange={(e) => setConfirmPassword(e.target.value)}
             className={inputClass}
             placeholder="Re-enter your password"
+          />
+        </Field>
+
+        <Field label="Invitation code (optional)" htmlFor="code">
+          <input
+            id="code"
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            className={inputClass}
+            placeholder="XXXXXXXXXXXX"
+            spellCheck={false}
+            autoCapitalize="characters"
           />
         </Field>
 
