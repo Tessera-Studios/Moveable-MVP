@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import StreakBanner from "@/components/patient/StreakBanner";
 import ActiveSessionCard from "@/components/patient/ActiveSessionCard";
 import ProgressPreview from "@/components/patient/ProgressPreview";
@@ -8,6 +9,7 @@ import { getPatientStats } from "@/lib/actions/executions";
 import { getRequestTimezone } from "@/lib/timezone.server";
 import type { SessionTemplate, Exercise } from "@/lib/types";
 import { EmptyState } from "@/components/ui";
+import { UnreadBadge } from "@/components/chat/UnreadBadge";
 
 async function DashboardContent(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -44,6 +46,28 @@ async function DashboardContent(): Promise<React.JSX.Element> {
 
   return (
     <>
+      <div className="flex justify-end px-5 pt-4">
+        <Link
+          href="/patient/chat"
+          aria-label="Messages"
+          className="relative p-1 text-foreground"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <UnreadBadge />
+        </Link>
+      </div>
+
       <StreakBanner streak={stats.streak} totalCompleted={stats.totalCompleted} />
 
       <div className="flex flex-col gap-4 py-4">
