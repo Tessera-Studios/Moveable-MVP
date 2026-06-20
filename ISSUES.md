@@ -2,7 +2,7 @@
 
 This is a list of issues that need to be addressed before the MVP is ready for launch.
 
-- [x] UI: "Add another exercise" button should also be at the bottom of the list, not the top.
-- [x] UI: On mobile, should be able to use the back camera as well as the front camera, if present.
-- [x] UI: Patients can't see the video the provider uploaded for the exercise. When editing the session again, the exercises have the "attach a video" prompt, which implies that when saved, the videos did not stay attached to the exercise.
-- [x] UI: When a patient does a form check video, for an exercise, the video is not visible in the provider's patient detail page.
+
+- [x] UX: Session needs to be created before videos can be added.
+- [x] UI: On session start for patient, no exercises show up, even though they are visible on the dashboard.
+- [x] UI & UX: When adding exercises, the video should be the primary feature, then the exercise information is added. So video comes up first, which can be recorded etc, and in that same modal, the user can provide the exercise information.

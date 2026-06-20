@@ -32,18 +32,42 @@ export default async function SessionPage({
 
   if (!sessionData) notFound();
 
+  // Fetch base exercise columns without an embedded video join. The embedded
+  // `videos(storage_path)` relationship can fail to resolve in PostgREST,
+  // which nulls the entire result and leaves the patient with no exercises
+  // even though the dashboard (which omits the join) shows them. Resolve the
+  // instructional video paths in a separate, fault-tolerant query instead.
   const { data: exData } = await supabase
     .from("exercises")
     .select(
-      "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id, videos(storage_path)"
+      "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id"
     )
     .eq("session_template_id", sessionId)
     .order("sort_order", { ascending: true });
 
-  const allExercises: Exercise[] = (exData ?? []).map((row) => {
-    const { videos, ...rest } = row as typeof row & { videos: { storage_path: string } | null };
-    return { ...rest, video_storage_path: videos?.storage_path ?? null };
-  });
+  const exerciseRows = (exData ?? []) as (Exercise & { video_id: string | null })[];
+
+  const videoIds = exerciseRows
+    .map((ex) => ex.video_id)
+    .filter((id): id is string => id !== null && id !== undefined);
+
+  const videoPathMap = new Map<string, string>();
+  if (videoIds.length > 0) {
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("id, storage_path")
+      .in("id", videoIds);
+    for (const v of videos ?? []) {
+      videoPathMap.set(v.id as string, v.storage_path as string);
+    }
+  }
+
+  const allExercises: Exercise[] = exerciseRows.map((row) => ({
+    ...row,
+    video_storage_path: row.video_id
+      ? (videoPathMap.get(row.video_id) ?? null)
+      : null,
+  }));
 
   // Apply client-provided ordering from the dashboard drag-and-drop
   let exercises = allExercises;

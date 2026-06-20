@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import dynamic from "next/dynamic";
 import type { ExerciseFormItem } from "./ExerciseList";
+import { AddExerciseModal, type NewExerciseData } from "@/components/provider/AddExerciseModal";
 import {
   createSessionTemplate,
   updateSessionTemplate,
@@ -16,6 +17,7 @@ import {
   deleteExercise,
   reorderExercises,
 } from "@/lib/actions/exercises";
+import { saveVideoMetadata, attachInstructionalVideo } from "@/lib/actions/videos";
 
 const ExerciseList = dynamic(
   () => import("./ExerciseList").then((m) => ({ default: m.ExerciseList })),
@@ -46,18 +48,19 @@ interface SessionFormProps {
   patients: Patient[];
 }
 
-function newExercise(sortOrder: number): ExerciseFormItem {
-  return {
-    id: `new-${Date.now()}-${Math.random()}`,
-    name: "",
-    sets: 3,
-    reps: 10,
-    patient_notes: "",
-    sort_order: sortOrder,
-    isNew: true,
-    video_id: null,
-    video_storage_path: null,
-  };
+/**
+ * Wire a Storage-uploaded instructional video to a freshly persisted exercise:
+ * create the `videos` row, then point `exercises.video_id` at it.
+ */
+async function wirePendingVideo(
+  exerciseId: string,
+  storagePath: string
+): Promise<{ error: string } | null> {
+  const meta = await saveVideoMetadata(storagePath, exerciseId);
+  if ("error" in meta) return meta;
+  const attach = await attachInstructionalVideo(exerciseId, meta.id);
+  if ("error" in attach) return attach;
+  return null;
 }
 
 export function SessionForm({
@@ -79,44 +82,24 @@ export function SessionForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  async function addNewExercise(): Promise<void> {
-    if (mode === "edit" && sessionId) {
-      const sortOrder = exercises.length;
-      const tempId = `new-${Date.now()}-${Math.random()}`;
-      // Add optimistically so the row appears immediately
-      setExercises((prev) => [
-        ...prev,
-        {
-          id: tempId,
-          name: "New exercise",
-          sets: 3,
-          reps: 10,
-          patient_notes: "",
-          sort_order: sortOrder,
-          video_id: null,
-          video_storage_path: null,
-        },
-      ]);
-      const result = await addExercise(sessionId, {
-        name: "New exercise",
-        sets: 3,
-        reps: 10,
-        patient_notes: null,
-        sort_order: sortOrder,
-      });
-      if ("error" in result) {
-        setExercises((prev) => prev.filter((e) => e.id !== tempId));
-        setError(result.error);
-      } else {
-        // Swap temp ID for the real DB UUID — video attachment now works
-        setExercises((prev) =>
-          prev.map((e) => (e.id === tempId ? { ...e, id: result.id } : e))
-        );
-      }
-    } else {
-      setExercises((prev) => [...prev, newExercise(prev.length)]);
-    }
+  function handleAddExercise(data: NewExerciseData): void {
+    setExercises((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}-${Math.random()}`,
+        name: data.name,
+        sets: data.sets,
+        reps: data.reps,
+        patient_notes: data.patient_notes,
+        sort_order: prev.length,
+        isNew: true,
+        video_id: null,
+        video_storage_path: data.video_storage_path,
+      },
+    ]);
+    setAddModalOpen(false);
   }
 
   function handleSubmit(e: React.FormEvent): void {
@@ -164,6 +147,22 @@ export function SessionForm({
             setError(firstError.error);
             return;
           }
+
+          // Link any videos recorded before the session existed.
+          const videoResults = await Promise.all(
+            exercises.map((ex, i) => {
+              const result = exerciseResults[i];
+              if (ex.video_storage_path && "id" in result) {
+                return wirePendingVideo(result.id, ex.video_storage_path);
+              }
+              return Promise.resolve(null);
+            })
+          );
+          const videoError = videoResults.find((r) => r !== null);
+          if (videoError) {
+            setError(videoError.error);
+            return;
+          }
         }
 
         router.push("/provider/templates");
@@ -191,9 +190,8 @@ export function SessionForm({
         const toAdd = exercises.filter((e) => e.id.startsWith("new-"));
         const toUpdate = exercises.filter((e) => !e.id.startsWith("new-"));
 
-        const results = await Promise.all([
-          ...toDelete.map((id) => deleteExercise(id)),
-          ...toAdd.map((ex) =>
+        const addResults = await Promise.all(
+          toAdd.map((ex) =>
             addExercise(sessionId, {
               name: ex.name,
               sets: ex.sets,
@@ -201,7 +199,11 @@ export function SessionForm({
               patient_notes: ex.patient_notes || null,
               sort_order: ex.sort_order,
             })
-          ),
+          )
+        );
+
+        const otherResults = await Promise.all([
+          ...toDelete.map((id) => deleteExercise(id)),
           ...toUpdate.map((ex) =>
             updateExercise(ex.id, {
               name: ex.name,
@@ -213,9 +215,27 @@ export function SessionForm({
           ),
         ]);
 
-        const firstError = results.find((r) => r && "error" in r);
+        const firstError = [...addResults, ...otherResults].find(
+          (r) => r && "error" in r
+        );
         if (firstError && "error" in firstError) {
           setError(firstError.error);
+          return;
+        }
+
+        // Link any videos recorded for the newly added exercises.
+        const videoResults = await Promise.all(
+          toAdd.map((ex, i) => {
+            const result = addResults[i];
+            if (ex.video_storage_path && "id" in result) {
+              return wirePendingVideo(result.id, ex.video_storage_path);
+            }
+            return Promise.resolve(null);
+          })
+        );
+        const videoError = videoResults.find((r) => r !== null);
+        if (videoError) {
+          setError(videoError.error);
           return;
         }
 
@@ -244,6 +264,7 @@ export function SessionForm({
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div>
         <label className="text-xs font-medium text-muted mb-1 block">
@@ -316,7 +337,7 @@ export function SessionForm({
           <h2 className="text-base font-semibold text-foreground">Exercises</h2>
           <button
             type="button"
-            onClick={addNewExercise}
+            onClick={() => setAddModalOpen(true)}
             className="text-sm text-primary font-medium"
           >
             + Add exercise
@@ -326,7 +347,7 @@ export function SessionForm({
         {exercises.length === 0 ? (
           <button
             type="button"
-            onClick={addNewExercise}
+            onClick={() => setAddModalOpen(true)}
             className="w-full border-2 border-dashed border-border rounded-card py-8 text-sm text-muted hover:border-primary hover:text-primary transition-colors"
           >
             Tap to add the first exercise
@@ -336,7 +357,7 @@ export function SessionForm({
             <ExerciseList items={exercises} onChange={setExercises} />
             <button
               type="button"
-              onClick={addNewExercise}
+              onClick={() => setAddModalOpen(true)}
               className="mt-3 w-full border-2 border-dashed border-border rounded-card py-3 text-sm text-muted hover:border-primary hover:text-primary transition-colors"
             >
               + Add exercise
@@ -368,5 +389,12 @@ export function SessionForm({
         )}
       </div>
     </form>
+
+    <AddExerciseModal
+      open={addModalOpen}
+      onClose={() => setAddModalOpen(false)}
+      onAdd={handleAddExercise}
+    />
+    </>
   );
 }

@@ -368,6 +368,24 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## ISSUES.md Round — Video-first exercise add + patient session fix (Complete)
+
+**Completed:** 2026-06-20
+
+### What was fixed
+
+**Patient session showed no exercises** (`app/(dashboard)/patient/session/[sessionId]/page.tsx`)
+- The exercises query used an embedded PostgREST join `videos(storage_path)`, which can fail to resolve and null the entire result — so the patient saw no exercises even though the dashboard (which omits the join) listed them. Replaced with base-column fetch + a separate, fault-tolerant `videos` lookup by `video_id` (mirrors the edit page pattern).
+
+**Video-first "Add exercise" flow that works before the session exists**
+- `components/provider/VideoCaptureField.tsx` — NEW. Records + uploads an instructional video to Storage **without** writing to the DB. For not-yet-persisted exercises; the `videos` row + `exercises.video_id` link are wired when the exercise is saved.
+- `components/provider/AddExerciseModal.tsx` — NEW. Modal with the instructional video as the primary top section, followed by name/sets/reps/notes. Returns the new exercise (incl. uploaded video storage path) to the form.
+- `app/(dashboard)/provider/sessions/SessionForm.tsx` — "Add exercise" buttons now open `AddExerciseModal` (both create and edit mode). New `wirePendingVideo()` helper calls `saveVideoMetadata` + `attachInstructionalVideo` after each new exercise is persisted, on submit. Removed the edit-mode "instant persist on add" hack (no longer needed now that videos upload to Storage independently).
+- `app/(dashboard)/provider/sessions/ExerciseList.tsx` — unpersisted rows (`new-` id) now render `VideoCaptureField` instead of the old "Save the exercise first…" message; persisted rows keep `ExerciseVideoAttacher`.
+- No schema change required — `videos.exercise_id` is nullable and the videos RLS insert check only requires `uploader_id = auth.uid()`.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |

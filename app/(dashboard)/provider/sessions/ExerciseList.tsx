@@ -2,6 +2,7 @@
 
 import React, { useId } from "react";
 import { ExerciseVideoAttacher } from "@/components/provider/ExerciseVideoAttacher";
+import { VideoCaptureField } from "@/components/provider/VideoCaptureField";
 import {
   DndContext,
   closestCenter,
@@ -192,8 +193,14 @@ function SortableRow({
         />
       </div>
 
-      {item.isNew ? (
-        <p className="text-xs text-muted">Save the exercise first to attach an instructional video.</p>
+      {item.id.startsWith("new-") ? (
+        // Not yet persisted: upload to Storage now, link to the DB on save.
+        <VideoCaptureField
+          storagePath={item.video_storage_path}
+          onCaptured={(storagePath) =>
+            onChange({ ...item, video_storage_path: storagePath })
+          }
+        />
       ) : (
         <ExerciseVideoAttacher
           exerciseId={item.id}
