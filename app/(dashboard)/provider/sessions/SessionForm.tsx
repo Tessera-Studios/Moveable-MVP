@@ -3,7 +3,20 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import { ExerciseList, type ExerciseFormItem } from "./ExerciseList";
+import dynamic from "next/dynamic";
+import type { ExerciseFormItem } from "./ExerciseList";
+
+const ExerciseList = dynamic(
+  () => import("./ExerciseList").then((m) => ({ default: m.ExerciseList })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-4 text-sm text-muted text-center">
+        Loading exercises…
+      </div>
+    ),
+  }
+);
 import {
   createSessionTemplate,
   updateSessionTemplate,

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { SessionForm } from "../../SessionForm";
 import type { ExerciseFormItem } from "../../ExerciseList";
+import { EditErrorBoundary } from "../EditErrorBoundary";
 import Link from "next/link";
 
 interface PageProps {
@@ -76,17 +77,19 @@ export default async function EditSessionPage({
         ← Templates
       </Link>
       <h1 className="text-2xl font-semibold text-foreground">Edit session</h1>
-      <SessionForm
-        mode="edit"
-        sessionId={session.id}
-        patients={patients}
-        initialData={{
-          name: session.name,
-          patient_id: session.patient_id,
-          provider_notes: session.provider_notes ?? "",
-          exercises,
-        }}
-      />
+      <EditErrorBoundary>
+        <SessionForm
+          mode="edit"
+          sessionId={session.id}
+          patients={patients}
+          initialData={{
+            name: session.name,
+            patient_id: session.patient_id,
+            provider_notes: session.provider_notes ?? "",
+            exercises,
+          }}
+        />
+      </EditErrorBoundary>
     </div>
   );
 }

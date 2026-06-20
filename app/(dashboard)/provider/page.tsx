@@ -7,9 +7,7 @@ import { RecentActivity } from "./RecentActivity";
 import InvitationCodeWidget from "./InvitationCodeWidget";
 import Link from "next/link";
 import { Button } from "@/components/ui";
-import LogoutButton from "@/components/shared/LogoutButton";
-import DeleteAccountButton from "@/components/shared/DeleteAccountButton";
-import { deleteProviderAccount } from "@/lib/actions/account";
+import { UnreadBadge } from "@/components/chat/UnreadBadge";
 
 interface PatientRow {
   id: string;
@@ -117,11 +115,32 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
 
   return (
     <div className="px-5 pt-10 pb-6 flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">{greeting}</h1>
-        <p className="text-sm text-muted mt-0.5">
-          Here's your practice at a glance.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{greeting}</h1>
+          <p className="text-sm text-muted mt-0.5">
+            Here's your practice at a glance.
+          </p>
+        </div>
+        <Link
+          href="/provider/chat"
+          aria-label="Messages"
+          className="relative p-1 text-foreground -mr-1"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <UnreadBadge />
+        </Link>
       </div>
 
       <StatsOverview
@@ -159,21 +178,6 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
         <RecentActivity items={recentActivity} />
       </section>
 
-      <LogoutButton />
-
-      {/* Danger zone */}
-      <div className="bg-card rounded-card shadow-card p-5 mb-6">
-        <p className="text-[11px] font-semibold text-placeholder uppercase tracking-widest mb-1">
-          Danger Zone
-        </p>
-        <p className="text-sm text-placeholder mb-4">
-          You must remove all patients before deleting your account.
-        </p>
-        <DeleteAccountButton
-          action={deleteProviderAccount}
-          confirmationMessage="This will permanently delete your account. Your patients' session history will be kept. This cannot be undone."
-        />
-      </div>
     </div>
   );
 }
