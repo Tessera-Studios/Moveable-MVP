@@ -42,7 +42,7 @@ export function Modal({
     focusable?.[0]?.focus();
 
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
