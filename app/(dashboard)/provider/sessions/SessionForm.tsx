@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import dynamic from "next/dynamic";
 import type { ExerciseFormItem } from "./ExerciseList";
+import {
+  createSessionTemplate,
+  updateSessionTemplate,
+  deleteSessionTemplate,
+} from "@/lib/actions/sessions";
+import {
+  addExercise,
+  updateExercise,
+  deleteExercise,
+  reorderExercises,
+} from "@/lib/actions/exercises";
 
 const ExerciseList = dynamic(
   () => import("./ExerciseList").then((m) => ({ default: m.ExerciseList })),
@@ -17,17 +28,6 @@ const ExerciseList = dynamic(
     ),
   }
 );
-import {
-  createSessionTemplate,
-  updateSessionTemplate,
-  deleteSessionTemplate,
-} from "@/lib/actions/sessions";
-import {
-  addExercise,
-  updateExercise,
-  deleteExercise,
-  reorderExercises,
-} from "@/lib/actions/exercises";
 
 interface Patient {
   id: string;
