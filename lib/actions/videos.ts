@@ -144,18 +144,42 @@ export async function getPatientVideosForProvider(
 
   // Use admin client to bypass RLS — authorization already verified above
   const admin = createAdminClient();
-  const { data, error } = await admin
+
+  // Phase 1: Fetch videos without join to include rows where exercise_id IS NULL
+  const { data: videos, error } = await admin
     .from("videos")
-    .select("id, storage_path, created_at, exercises(name)")
+    .select("id, storage_path, created_at, exercise_id")
     .eq("uploader_id", patientId)
     .order("created_at", { ascending: false });
 
   if (error) return { error: error.message };
 
-  return (data ?? []).map((row) => ({
+  // Phase 2: Extract distinct non-null exercise IDs and fetch exercise names
+  const exerciseIds = [...new Set(
+    (videos ?? [])
+      .map((v) => (v.exercise_id as string | null))
+      .filter((id): id is string => id !== null)
+  )];
+
+  let exerciseNameMap = new Map<string, string>();
+  if (exerciseIds.length > 0) {
+    const { data: exercises, error: exerciseError } = await admin
+      .from("exercises")
+      .select("id, name")
+      .in("id", exerciseIds);
+
+    if (exerciseError) return { error: exerciseError.message };
+
+    exerciseNameMap = new Map(
+      (exercises ?? []).map((ex) => [ex.id as string, ex.name as string])
+    );
+  }
+
+  // Phase 3: Map videos to PatientVideoRow, looking up exercise names
+  return (videos ?? []).map((row) => ({
     id: row.id as string,
     storage_path: row.storage_path as string,
     created_at: row.created_at as string,
-    exercise_name: (row.exercises as unknown as { name: string } | null)?.name ?? null,
+    exercise_name: row.exercise_id ? (exerciseNameMap.get(row.exercise_id as string) ?? null) : null,
   }));
 }
