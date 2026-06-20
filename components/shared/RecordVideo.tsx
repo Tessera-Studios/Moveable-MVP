@@ -31,7 +31,7 @@ function getSupportedMimeType(): string {
 
 export function RecordVideo({
   onRecordingComplete,
-  maxDuration = 120,
+  maxDuration = 20,
 }: RecordVideoProps): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -167,6 +167,11 @@ export function RecordVideo({
     try {
       const r = await fetch(previewUrl);
       const blob = await r.blob();
+      if (blob.size > 15 * 1024 * 1024) {
+        setState("error");
+        setErrorMessage("Video exceeds the 15 MB limit. Please record a shorter clip.");
+        return;
+      }
       onRecordingComplete(blob, elapsed);
     } catch {
       setState("error");

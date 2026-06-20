@@ -118,7 +118,7 @@ export function ExerciseVideoAttacher({
             </div>
           ) : (
             <>
-              <RecordVideo onRecordingComplete={handleRecordingComplete} />
+              <RecordVideo onRecordingComplete={handleRecordingComplete} maxDuration={20} />
               {attachState === "error" && (
                 <p className="text-sm text-error bg-red-50 rounded-sm px-3 py-2">
                   {errorMessage}
