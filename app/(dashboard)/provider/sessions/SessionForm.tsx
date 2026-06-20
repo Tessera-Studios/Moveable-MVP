@@ -147,15 +147,16 @@ export function SessionForm({
         const originalIds = new Set(
           (initialData?.exercises ?? []).map((e) => e.id)
         );
+        // Exercises with a "new-" prefix have never been persisted to the DB.
+        // All real UUIDs (whether loaded at page open or immediately-saved this
+        // session) go through updateExercise so edits are not lost.
         const toDelete = [...originalIds].filter(
           (id) => !exercises.some((e) => e.id === id)
         );
-        const toAdd = exercises.filter((e) => e.isNew);
-        const toUpdate = exercises.filter(
-          (e) => !e.isNew && originalIds.has(e.id)
-        );
+        const toAdd = exercises.filter((e) => e.id.startsWith("new-"));
+        const toUpdate = exercises.filter((e) => !e.id.startsWith("new-"));
 
-        await Promise.all([
+        const results = await Promise.all([
           ...toDelete.map((id) => deleteExercise(id)),
           ...toAdd.map((ex) =>
             addExercise(sessionId, {
@@ -177,11 +178,17 @@ export function SessionForm({
           ),
         ]);
 
-        const existingToReorder = exercises
-          .filter((e) => !e.isNew)
+        const firstError = results.find((r) => r && "error" in r);
+        if (firstError && "error" in firstError) {
+          setError(firstError.error);
+          return;
+        }
+
+        const toReorder = exercises
+          .filter((e) => !e.id.startsWith("new-"))
           .map((e) => ({ id: e.id, sort_order: e.sort_order }));
-        if (existingToReorder.length > 0) {
-          await reorderExercises(existingToReorder);
+        if (toReorder.length > 0) {
+          await reorderExercises(toReorder);
         }
 
         router.push("/provider/templates");
