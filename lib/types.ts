@@ -5,6 +5,7 @@ export interface Profile {
   role: UserRole;
   provider_id: string | null;
   created_at: string;
+  focus_area?: string;
 }
 
 export interface InvitationCode {

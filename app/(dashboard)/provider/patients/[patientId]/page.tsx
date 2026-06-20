@@ -9,6 +9,7 @@ import { VideoPlayer } from "@/components/shared/VideoPlayer";
 import { getPatientVideosForProvider, getProviderFormCheckVideosForPatient } from "@/lib/actions/videos";
 import type { PatientVideoRow, ProviderFormCheckVideoRow } from "@/lib/actions/videos";
 import { ProviderFormRecord } from "@/components/provider/ProviderFormRecord";
+import { FocusAreaEditor } from "./FocusAreaEditor";
 
 interface PageProps {
   params: Promise<{ patientId: string }>;
@@ -57,7 +58,7 @@ export default async function PatientDetailPage({
   ] = await Promise.all([
     supabase
       .from("users")
-      .select("id, email, created_at, provider_id")
+      .select("id, email, created_at, provider_id, focus_area")
       .eq("id", patientId)
       .eq("provider_id", user.id)
       .single<{
@@ -65,6 +66,7 @@ export default async function PatientDetailPage({
         email: string | null;
         created_at: string;
         provider_id: string | null;
+        focus_area: string | null;
       }>(),
     supabase
       .from("sessions_template")
@@ -119,6 +121,13 @@ export default async function PatientDetailPage({
           </p>
         </div>
       </div>
+
+      <section>
+        <h2 className="text-base font-semibold text-foreground mb-2">Focus area</h2>
+        <div className="bg-card rounded-card shadow-card p-4">
+          <FocusAreaEditor patientId={patientId} currentFocusArea={patient.focus_area ?? null} />
+        </div>
+      </section>
 
       <section>
         <div className="flex items-center justify-between mb-2">

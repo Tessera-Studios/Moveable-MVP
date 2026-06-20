@@ -10,6 +10,7 @@ interface PatientRow {
   id: string;
   email: string | null;
   created_at: string;
+  focus_area: string | null;
 }
 
 interface ExecutionRow {
@@ -17,7 +18,12 @@ interface ExecutionRow {
   completed_at: string | null;
 }
 
-export default async function PatientsPage(): Promise<React.JSX.Element> {
+interface PageProps {
+  searchParams: Promise<{ focus?: string }>;
+}
+
+export default async function PatientsPage({ searchParams }: PageProps): Promise<React.JSX.Element> {
+  const { focus } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -30,7 +36,7 @@ export default async function PatientsPage(): Promise<React.JSX.Element> {
   const [{ data: patientsRaw }, { data: executionsRaw }] = await Promise.all([
     supabase
       .from("users")
-      .select("id, email, created_at")
+      .select("id, email, created_at, focus_area")
       .eq("provider_id", user.id)
       .eq("role", "patient")
       .order("created_at", { ascending: false }),
@@ -59,6 +65,14 @@ export default async function PatientsPage(): Promise<React.JSX.Element> {
     return { ...p, streak, last_active, compliance_rate };
   });
 
+  const focusAreas = Array.from(
+    new Set(patients.filter((p) => p.focus_area).map((p) => p.focus_area as string))
+  ).sort();
+
+  const filteredPatients = focus
+    ? patientsWithStats.filter((p) => p.focus_area === focus)
+    : patientsWithStats;
+
   return (
     <div className="px-5 pt-10 pb-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
@@ -71,13 +85,42 @@ export default async function PatientsPage(): Promise<React.JSX.Element> {
         </Link>
       </div>
 
+      {focusAreas.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-4">
+          <a
+            href="/provider/patients"
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              !focus ? "bg-primary text-white border-primary" : "bg-card text-muted border-border hover:border-primary"
+            }`}
+          >
+            All
+          </a>
+          {focusAreas.map((area) => (
+            <a
+              key={area}
+              href={`/provider/patients?focus=${encodeURIComponent(area)}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                focus === area ? "bg-primary text-white border-primary" : "bg-card text-muted border-border hover:border-primary"
+              }`}
+            >
+              {area}
+            </a>
+          ))}
+        </div>
+      )}
+
       {patients.length === 0 ? (
         <EmptyState
           title="No patients yet"
           description="Generate an invitation code and share it with your patients to get started."
         />
+      ) : filteredPatients.length === 0 ? (
+        <EmptyState
+          title="No patients in this category"
+          description="No patients have been assigned this focus area yet."
+        />
       ) : (
-        <PatientRosterCard patients={patientsWithStats} />
+        <PatientRosterCard patients={filteredPatients} />
       )}
     </div>
   );
