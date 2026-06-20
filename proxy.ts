@@ -50,18 +50,38 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isPublicRoute) {
+  const firstSegment = pathname.split("/")[1];
+  const isDashboardRoute =
+    firstSegment === "provider" || firstSegment === "patient";
+
+  if (user && (isPublicRoute || isDashboardRoute)) {
     const { data: profile } = await supabase
       .from("users")
       .select("role")
       .eq("id", user.id)
       .single<Pick<Profile, "role">>();
 
-    const destination =
-      profile?.role === "provider" ? "/provider" : "/patient";
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = destination;
-    return NextResponse.redirect(dashboardUrl);
+    if (isPublicRoute) {
+      const destination =
+        profile?.role === "provider" ? "/provider" : "/patient";
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = destination;
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    if (isDashboardRoute) {
+      if (!profile) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = "/login";
+        return NextResponse.redirect(loginUrl);
+      }
+
+      if (firstSegment !== profile.role) {
+        const correctUrl = request.nextUrl.clone();
+        correctUrl.pathname = `/${profile.role}`;
+        return NextResponse.redirect(correctUrl);
+      }
+    }
   }
 
   return response;
