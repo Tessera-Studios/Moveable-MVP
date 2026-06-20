@@ -14,6 +14,7 @@ type FormState = {
 
 export default function LoginPage(): React.JSX.Element {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState<FormState>({
     email: "",
     password: "",
@@ -87,16 +88,26 @@ export default function LoginPage(): React.JSX.Element {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={state.password}
-              onChange={(e) => setField("password", e.target.value)}
-              className="w-full h-12 rounded-card border border-border px-4 bg-card text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={state.password}
+                onChange={(e) => setField("password", e.target.value)}
+                className="w-full h-12 rounded-card border border-border px-4 pr-16 bg-card text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted font-medium"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
 
           {state.error && (
