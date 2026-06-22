@@ -35,25 +35,34 @@ export async function POST(request: Request): Promise<Response> {
 
   const patientIds = (body as { patientIds: string[] }).patientIds;
 
+  const MAX_PATIENTS = 20;
+  if (patientIds.length > MAX_PATIENTS) {
+    return new Response(`Maximum ${MAX_PATIENTS} patients per export`, { status: 400 });
+  }
+
   const from = "2024-01-01";
   const to = new Date().toISOString().slice(0, 10);
 
-  const pdfs: Array<{ id: string; buffer: Buffer }> = [];
+  type PatientResult = { id: string; buffer: Buffer };
 
-  for (const patientId of patientIds) {
-    const { data: patient } = await supabase
-      .from("users")
-      .select("id, email, created_at")
-      .eq("id", patientId)
-      .eq("provider_id", user.id)
-      .single<{ id: string; email: string | null; created_at: string }>();
+  const results = await Promise.all(
+    patientIds.map(async (patientId): Promise<PatientResult | null> => {
+      const { data: patient } = await supabase
+        .from("users")
+        .select("id, email, created_at")
+        .eq("id", patientId)
+        .eq("provider_id", user.id)
+        .single<{ id: string; email: string | null; created_at: string }>();
 
-    if (!patient) continue;
+      if (!patient) return null;
 
-    const stats = await getExportStats(supabase, patientId, from, to);
-    const buffer = await generatePdf(patient, stats, from, to);
-    pdfs.push({ id: patientId, buffer });
-  }
+      const stats = await getExportStats(supabase, patientId, from, to);
+      const buffer = await generatePdf(patient, stats, from, to);
+      return { id: patientId, buffer };
+    })
+  );
+
+  const pdfs = results.filter((r): r is PatientResult => r !== null);
 
   if (pdfs.length === 0) {
     return new Response("No accessible patients found", { status: 404 });

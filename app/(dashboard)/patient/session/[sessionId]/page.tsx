@@ -10,6 +10,13 @@ interface Props {
   searchParams: Promise<{ order?: string }>;
 }
 
+interface ProviderVideoEntry {
+  id: string;
+  storage_path: string;
+  created_at: string;
+  exercise_id: string | null;
+}
+
 export default async function SessionPage({
   params,
   searchParams,
@@ -66,13 +73,6 @@ export default async function SessionPage({
   const exerciseVideoIdSet = new Set(
     exerciseRows.filter((e) => e.video_id).map((e) => e.video_id as string)
   );
-
-  interface ProviderVideoEntry {
-    id: string;
-    storage_path: string;
-    created_at: string;
-    exercise_id: string | null;
-  }
 
   let providerFormCheckVideos: ProviderVideoEntry[] = [];
   if (exerciseRows.length > 0) {

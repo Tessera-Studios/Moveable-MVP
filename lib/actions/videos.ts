@@ -150,6 +150,24 @@ export async function saveProviderFormCheckVideo(
 
   if (!patientRow) return { error: "Patient not found or not assigned to you." };
 
+  const { data: exerciseRow } = await auth.supabase
+    .from("exercises")
+    .select("id, session_template_id")
+    .eq("id", exerciseId)
+    .single<{ id: string; session_template_id: string }>();
+
+  if (!exerciseRow) return { error: "Exercise not found." };
+
+  const { data: templateRow } = await auth.supabase
+    .from("sessions_template")
+    .select("id")
+    .eq("id", exerciseRow.session_template_id)
+    .eq("provider_id", auth.userId)
+    .eq("patient_id", patientId)
+    .single<{ id: string }>();
+
+  if (!templateRow) return { error: "Exercise does not belong to this patient's session." };
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("videos")
@@ -182,20 +200,21 @@ export async function getProviderFormCheckVideosForPatient(
 
   const admin = createAdminClient();
 
-  const { data: sessionRow } = await admin
+  const { data: templates, error: templatesError } = await admin
     .from("sessions_template")
     .select("id")
     .eq("patient_id", patientId)
-    .eq("provider_id", auth.userId)
-    .limit(1)
-    .maybeSingle<{ id: string }>();
+    .eq("provider_id", auth.userId);
 
-  if (!sessionRow) return [];
+  if (templatesError) return { error: templatesError.message };
+  if (!templates || templates.length === 0) return [];
+
+  const templateIds = templates.map((t) => t.id as string);
 
   const { data: exercises, error: exerciseError } = await admin
     .from("exercises")
     .select("id, name, video_id")
-    .eq("session_template_id", sessionRow.id);
+    .in("session_template_id", templateIds);
 
   if (exerciseError) return { error: exerciseError.message };
   if (!exercises || exercises.length === 0) return [];

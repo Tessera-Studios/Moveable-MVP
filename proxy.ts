@@ -71,9 +71,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     if (isDashboardRoute) {
       if (!profile) {
-        const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = "/login";
-        return NextResponse.redirect(loginUrl);
+        const fallbackUrl = request.nextUrl.clone();
+        fallbackUrl.pathname = "/patient";
+        return NextResponse.redirect(fallbackUrl);
       }
 
       if (firstSegment !== profile.role) {
