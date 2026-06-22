@@ -106,6 +106,7 @@ export default function FeedbackForm({
           type: "success",
           message: `Session complete! 🔥 ${streak}-day streak · ${totalCompleted} total`,
         });
+        router.refresh();
         router.push("/patient/progress");
       } catch (err) {
         toast({

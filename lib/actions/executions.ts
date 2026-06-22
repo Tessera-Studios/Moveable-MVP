@@ -81,7 +81,8 @@ export async function completeSession(
     totalCompleted: dates.length,
   };
 
-  revalidatePath("/patient", "layout");
+  revalidatePath("/patient");
+  revalidatePath("/patient/progress");
 
   return result;
 }

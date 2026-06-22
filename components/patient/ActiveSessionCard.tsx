@@ -73,6 +73,7 @@ function SortableExerciseItem({
       <button
         {...attributes}
         {...listeners}
+        suppressHydrationWarning
         className="text-placeholder touch-none cursor-grab active:cursor-grabbing p-1 -ml-1"
         aria-label="Drag to reorder"
       >

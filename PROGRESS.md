@@ -386,6 +386,92 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## ISSUES.md Round — Full Issues Resolution (Complete)
+
+**Completed:** 2026-06-22
+**Plan:** `docs/plans/2026-06-20-issues-resolution.md`
+**Branch:** `staging` (pushed to origin)
+
+### P0 Bugs Fixed
+
+**Last-7-days completed day not highlighted** (`lib/actions/executions.ts`)
+- `completeSession` was not invalidating the Next.js router cache for `/patient`. Added `revalidatePath("/patient", "layout")` after streak calculation so the ProgressPreview bar for today highlights immediately when the patient navigates back to the dashboard.
+
+**Patient form-check videos not visible to provider** (`lib/actions/videos.ts`)
+- `getPatientVideosForProvider` used an embedded PostgREST join `.select("id, storage_path, created_at, exercises(name)")` that silently dropped rows where `exercise_id IS NULL` (exercises deleted with `ON DELETE SET NULL`). Replaced with a two-phase fetch: base-column query first, then a separate lookup for exercise names by ID, mapped back onto video rows.
+
+**Cross-role URL access** (`proxy.ts`)
+- Authenticated users could type `/provider` as a patient (or `/patient` as a provider) and access the wrong dashboard. `proxy.ts` now checks whether the first URL path segment matches the user's role, and redirects to their correct dashboard if not. Missing profile (race condition / new user) redirects to `/patient` to avoid a redirect loop.
+
+**PDF export broken** (`app/api/export/patient-stats/route.ts`, `ExportButton.tsx`)
+- Export route was running in the Edge runtime; PDFKit requires Node.js Buffer/streams APIs. Added `export const runtime = "nodejs"`. Error toast now surfaces the HTTP status code for easier diagnosis.
+
+### P1 Features
+
+**Video max 15MB / 20s duration limits** (`components/shared/RecordVideo.tsx` + callers)
+- Changed `RecordVideo` default `maxDuration` from 120 to 20 seconds.
+- Added file-size check in `handleUseRecording`: blobs exceeding 15 MB show an inline error and abort the upload flow.
+- All three callers (`PatientFormRecord`, `ExerciseVideoAttacher`, `VideoCaptureField`) now explicitly pass `maxDuration={20}`.
+
+**Provider records form-check video for patients**
+- `lib/actions/videos.ts` — `saveProviderFormCheckVideo(patientId, exerciseId, storagePath)`: requireRole("provider") + patient-ownership check + exercise-ownership check (exercise must belong to a session template owned by this provider for this patient) + admin-client insert. `getProviderFormCheckVideosForPatient(patientId)`: fetches ALL matching session templates, gathers their exercises, queries videos by provider+exercise IDs, filters out instructional videos (those referenced by `exercises.video_id`).
+- `components/provider/ProviderFormRecord.tsx` — NEW. Client component (modelled after `PatientFormRecord`) with "Record form-check" button, modal, upload flow calling `saveProviderFormCheckVideo`. Success message: "Your patient will be able to see this video."
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — `ProviderFormRecord` rendered per exercise in the assigned-session card. "Your form-check videos (N)" section added below patient videos section.
+- `app/(dashboard)/patient/session/[sessionId]/page.tsx` — "Provider form-check videos" section at the bottom shows non-instructional videos linked to the session's exercises.
+
+### P2 Features
+
+**Provider categorize patients by focus area**
+- `supabase/migrations/20260620000001_focus_area.sql` — `ALTER TABLE public.users ADD COLUMN IF NOT EXISTS focus_area TEXT`. **Must be applied manually.**
+- `lib/types.ts` — `focus_area?: string` added to `Profile`.
+- `lib/actions/patients.ts` — `updatePatientFocusArea(patientId, focusArea)`: requireRole + ownership check; empty string converts to `null`.
+- `app/(dashboard)/provider/patients/[patientId]/FocusAreaEditor.tsx` — NEW client component. View/edit toggle. Text input with `<datalist>` combobox (6 defaults: Shoulder, Back, Legs, Core, Arms, Other; custom values allowed). Saves via `updatePatientFocusArea`.
+- `app/(dashboard)/provider/patients/[patientId]/page.tsx` — "Focus area" section with `FocusAreaEditor` rendered after patient header.
+- `app/(dashboard)/provider/patients/page.tsx` — focus area filter chips (server-rendered `<a>` tags with `?focus=` query param); patient list filtered by `searchParams.focus` when set.
+
+**Bulk export patients by focus area**
+- `app/api/export/lib.ts` — NEW. Shared `getExportStats` and `generatePdf` helpers extracted from the single-export route.
+- `app/api/export/patient-stats/route.ts` — Updated to import from `./lib` (no logic change).
+- `app/api/export/bulk/route.ts` — NEW. `POST /api/export/bulk` accepts `{ patientIds: string[] }`. Max 20 IDs enforced (400 otherwise). Concurrent per-patient processing via `Promise.all`; unauthorized patients skipped. Returns a ZIP (`application/zip`) built with `archiver`. Runtime: `nodejs`.
+- `app/(dashboard)/provider/patients/PatientBulkExport.tsx` — NEW client component. Renders patient list with per-row checkboxes; "Export Selected (N)" button appears when ≥1 checked; POSTs to bulk route and triggers ZIP download.
+- `app/(dashboard)/provider/patients/page.tsx` — Patient list replaced with `PatientBulkExport`; focus-area filter chips remain server-rendered.
+- `archiver` added to `dependencies`; `@types/archiver` in `devDependencies`.
+
+### Known gaps / next steps
+- DB migration `20260620000001_focus_area.sql` must be applied manually in the Supabase Dashboard.
+- Supabase Storage bucket `exercise-videos` file-size limit still set to 100MB (requires manual change in Dashboard → Storage → bucket settings → 15MB limit to match client-side enforcement).
+- No automated tests for new server actions or route handlers (would require a live test DB).
+
+---
+
+## ISSUES.md Round — Remaining Issues Resolution (Complete)
+
+**Completed:** 2026-06-22
+**Plan:** `docs/plans/2026-06-22-remaining-issues-fixes.md`
+**Branch:** `staging` → merged to `main`
+
+### Fixes
+
+**Hydration mismatch on patient dashboard** (`components/patient/ActiveSessionCard.tsx`)
+- `@dnd-kit` generates `aria-describedby` IDs from a module-level counter that produces different values on SSR vs client. Added `suppressHydrationWarning` to the drag-handle `<button>` that receives `{...attributes}`, the only element affected by the non-deterministic ID.
+
+**PDF export crash — `ENOENT: /ROOT/node_modules/pdfkit/js/data/Helvetica.afm`** (`next.config.ts`)
+- Turbopack was bundling PDFKit and rewriting `__dirname` to its internal `/ROOT` virtual path, breaking font file resolution. Added `serverExternalPackages: ["pdfkit"]` so Turbopack leaves PDFKit unbundled and `__dirname` resolves correctly at runtime.
+
+**Last-7-days section not updating after session completion** (`lib/actions/executions.ts`, `components/patient/FeedbackForm.tsx`)
+- `completeSession` was calling `revalidatePath("/patient", "layout")` which doesn't reliably bust the client router cache for pages navigated to via `router.push`. Replaced with two targeted `revalidatePath` calls (`/patient` and `/patient/progress`). Added `router.refresh()` in `FeedbackForm` before `router.push` to force a cache bust on the current route tree.
+
+**"This Week" section redesigned** (`components/patient/ProgressPreview.tsx`)
+- Replaced bar chart (broken: percentage heights with no defined parent height → all bars 0px) with 7 circular day indicators. Completed days show `bg-primary` (blue) with white text; future/missed days show `bg-surface` with muted text. Window starts at today and shows the next 6 days so today is always the first slot (e.g. Wednesday start → W T F S S M T). Renamed label from "Last 7 Days" to "This Week".
+
+**RLS blocks provider from updating patient focus area** (`lib/actions/patients.ts`)
+- `users` table RLS only allows providers to SELECT their patients, not UPDATE. Used `createAdminClient()` (service role) for the `UPDATE` query in `updatePatientFocusArea`, matching the pattern used in `lib/actions/videos.ts`. Application-level authorization (ownership check via `requireRole`) is still enforced before the admin call.
+
+**Provider compliance rate shows 14% on day 1** (`app/(dashboard)/provider/page.tsx`)
+- Compliance was calculated as `completedDaysInLast7 / 7`. Changed denominator to days elapsed since the patient's first session (inclusive), so day 1 = 100%, day 2 with both completed = 100%, etc. Numerator is now all-time distinct completed days (not last-7) to match the broader window.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
