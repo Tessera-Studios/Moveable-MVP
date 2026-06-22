@@ -444,6 +444,34 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## ISSUES.md Round — Remaining Issues Resolution (Complete)
+
+**Completed:** 2026-06-22
+**Plan:** `docs/plans/2026-06-22-remaining-issues-fixes.md`
+**Branch:** `staging` → merged to `main`
+
+### Fixes
+
+**Hydration mismatch on patient dashboard** (`components/patient/ActiveSessionCard.tsx`)
+- `@dnd-kit` generates `aria-describedby` IDs from a module-level counter that produces different values on SSR vs client. Added `suppressHydrationWarning` to the drag-handle `<button>` that receives `{...attributes}`, the only element affected by the non-deterministic ID.
+
+**PDF export crash — `ENOENT: /ROOT/node_modules/pdfkit/js/data/Helvetica.afm`** (`next.config.ts`)
+- Turbopack was bundling PDFKit and rewriting `__dirname` to its internal `/ROOT` virtual path, breaking font file resolution. Added `serverExternalPackages: ["pdfkit"]` so Turbopack leaves PDFKit unbundled and `__dirname` resolves correctly at runtime.
+
+**Last-7-days section not updating after session completion** (`lib/actions/executions.ts`, `components/patient/FeedbackForm.tsx`)
+- `completeSession` was calling `revalidatePath("/patient", "layout")` which doesn't reliably bust the client router cache for pages navigated to via `router.push`. Replaced with two targeted `revalidatePath` calls (`/patient` and `/patient/progress`). Added `router.refresh()` in `FeedbackForm` before `router.push` to force a cache bust on the current route tree.
+
+**"This Week" section redesigned** (`components/patient/ProgressPreview.tsx`)
+- Replaced bar chart (broken: percentage heights with no defined parent height → all bars 0px) with 7 circular day indicators. Completed days show `bg-primary` (blue) with white text; future/missed days show `bg-surface` with muted text. Window starts at today and shows the next 6 days so today is always the first slot (e.g. Wednesday start → W T F S S M T). Renamed label from "Last 7 Days" to "This Week".
+
+**RLS blocks provider from updating patient focus area** (`lib/actions/patients.ts`)
+- `users` table RLS only allows providers to SELECT their patients, not UPDATE. Used `createAdminClient()` (service role) for the `UPDATE` query in `updatePatientFocusArea`, matching the pattern used in `lib/actions/videos.ts`. Application-level authorization (ownership check via `requireRole`) is still enforced before the admin call.
+
+**Provider compliance rate shows 14% on day 1** (`app/(dashboard)/provider/page.tsx`)
+- Compliance was calculated as `completedDaysInLast7 / 7`. Changed denominator to days elapsed since the patient's first session (inclusive), so day 1 = 100%, day 2 with both completed = 100%, etc. Numerator is now all-time distinct completed days (not last-7) to match the broader window.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |

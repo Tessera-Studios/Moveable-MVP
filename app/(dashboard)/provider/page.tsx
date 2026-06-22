@@ -62,15 +62,24 @@ export default async function ProviderDashboardPage(): Promise<React.JSX.Element
   const patientsWithStats = patients.map((p) => {
     const patientExecs = execs.filter((e) => e.patient_id === p.id);
     const allTimestamps = patientExecs.map((e) => e.completed_at!);
-    const last7Timestamps = patientExecs
-      .filter((e) => e.completed_at! > weekAgo)
-      .map((e) => e.completed_at!);
     const allDistinctDays = distinctLocalDays(allTimestamps, "UTC");
-    const last7DistinctDays = distinctLocalDays(last7Timestamps, "UTC");
     const streak = calculateStreak(allDistinctDays, "UTC");
     const last_active =
       patientExecs.length > 0 ? patientExecs[0].completed_at : null;
-    const compliance_rate = Math.round(complianceRate(last7DistinctDays.length, 7) * 100);
+    const firstDay = allDistinctDays.length > 0
+      ? [...allDistinctDays].sort()[0]
+      : null;
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "UTC" });
+    const daysSinceFirst = firstDay
+      ? Math.floor(
+          (new Date(today + "T12:00:00").getTime() -
+            new Date(firstDay + "T12:00:00").getTime()) /
+            86_400_000
+        ) + 1
+      : 0;
+    const compliance_rate = Math.round(
+      complianceRate(allDistinctDays.length, daysSinceFirst) * 100
+    );
     return { ...p, streak, last_active, compliance_rate };
   });
 

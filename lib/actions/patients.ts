@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/actions/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function removePatient(
   patientId: string
@@ -39,7 +40,8 @@ export async function updatePatientFocusArea(
 
   if (!patient) return { error: "Patient not found or not assigned to you." };
 
-  const { error } = await auth.supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("users")
     .update({ focus_area: focusArea || null })
     .eq("id", patientId);

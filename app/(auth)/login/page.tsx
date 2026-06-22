@@ -48,7 +48,7 @@ export default function LoginPage(): React.JSX.Element {
       return;
     }
 
-    router.replace("/");
+    router.refresh();
   }
 
   return (
