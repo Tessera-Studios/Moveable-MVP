@@ -1,7 +1,7 @@
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { PatientRosterCard } from "../PatientRosterCard";
+import { PatientBulkExport } from "./PatientBulkExport";
 import { EmptyState } from "@/components/ui";
 import Link from "next/link";
 import { complianceRate, calculateStreak, distinctLocalDays } from "@/lib/stats";
@@ -120,7 +120,7 @@ export default async function PatientsPage({ searchParams }: PageProps): Promise
           description="No patients have been assigned this focus area yet."
         />
       ) : (
-        <PatientRosterCard patients={filteredPatients} />
+        <PatientBulkExport patients={filteredPatients} />
       )}
     </div>
   );
