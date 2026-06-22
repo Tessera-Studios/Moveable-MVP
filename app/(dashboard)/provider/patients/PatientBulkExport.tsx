@@ -78,7 +78,9 @@ export function PatientBulkExport({
       const a = document.createElement("a");
       a.href = url;
       a.download = "patients-export.zip";
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
       toast({ message: "Export failed. Please try again.", type: "error" });

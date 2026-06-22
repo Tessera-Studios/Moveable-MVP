@@ -35,7 +35,6 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
-    "@types/archiver": "^8.0.0",
     "@types/recharts": "^1.8.29",
     "archiver": "^8.0.0",
     "next": "16.2.9",
@@ -46,6 +45,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/archiver": "^8.0.0",
     "@types/node": "^20",
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
