@@ -472,6 +472,36 @@ This file tracks what has been built. Read it before starting any work so you kn
 
 ---
 
+## ISSUES.md Round — Camera default, numeric text inputs, larger Edit buttons (Complete)
+
+**Completed:** 2026-07-01
+**Branch:** `staging`
+
+Three of the four remaining ISSUES.md items were resolved (the fourth — patient exercise-detail modal — is still pending). Each was implemented as a surgical change; `npx tsc --noEmit` and the vitest suite (15 tests) pass clean.
+
+### Fixes
+
+**Camera starts facing the patient (rear camera)** (`components/shared/RecordVideo.tsx`)
+- The recorder now defaults to `facingMode: "environment"` (rear camera) on mount instead of `"user"`. Both the initial `facingMode` state and the `startCamera` default parameter changed to `"environment"`.
+- Added a silent mount-time fallback: if the rear camera is unavailable (`OverconstrainedError` / `NotFoundError`, e.g. most desktops), `startCamera` recurses once into `"user"` rather than surfacing an error, so users still get a working front camera. Genuine permission-denied errors still show the original message.
+- `setFacingMode(mode)` is now called on every successful `getUserMedia`, keeping the existing camera-toggle button label in sync with the camera actually in use.
+
+**Sets/reps are text inputs validated as numbers** (`components/provider/AddExerciseModal.tsx`, `app/(dashboard)/provider/sessions/ExerciseList.tsx`, `app/(dashboard)/provider/sessions/SessionForm.tsx`, `app/(dashboard)/provider/sessions/[sessionId]/edit/page.tsx`, `lib/actions/exercises.ts`)
+- Sets/reps `<input>`s changed from `type="number"` to `type="text" inputMode="numeric" pattern="[0-9]*"` (no spinner arrows; numeric keypad on mobile). `onChange` strips non-digits so the field can only hold a numeric string.
+- Edit-time value is now held as a **string** so the field can be cleared and retyped (fixes the old `Math.max(1, Number(""))` behaviour that forced a value on clear). `ExerciseFormItem.sets/reps` and the `AddExerciseModal` draft type are now `string`; the exported submit-time `NewExerciseData` and the `addExercise`/`updateExercise` action signatures remain `number`.
+- Validation + string→number coercion happens at submit: `AddExerciseModal.handleAdd` validates before calling `onAdd`; `SessionForm.handleSubmit` gates on every row being a positive integer and coerces via `toPositiveInteger` at each server-action call site. `lib/actions/exercises.ts` gained an `isValidCount` guard (`Number.isInteger(v) && v >= 1`) as server-side defense-in-depth. DB columns stay INTEGER.
+
+**Larger, easier-to-tap "Edit" controls** (`app/(dashboard)/provider/patients/[patientId]/FocusAreaEditor.tsx`, `app/(dashboard)/provider/templates/page.tsx`, `app/(dashboard)/provider/patients/[patientId]/page.tsx`)
+- All three small "Edit" controls now have `h-10` (40px) tap targets. The `FocusAreaEditor` "Edit" / "Set focus area" `<button>`s use the `Button` primitive (`variant="ghost" size="sm"`); the two `<Link>`s (templates list, patient-detail assigned-session edit) use button-like classes (`inline-flex items-center justify-center h-10 px-4 rounded-button`) matching the existing "Create template" link idiom. Hrefs/onClick behaviour unchanged.
+
+### Still pending
+- **Patient exercise-detail modal** — clicking an exercise on the patient side should open a modal with the exercise info + instructional video. Not yet built (needs a new `ExerciseDetailModal` reusing `Modal` + `VideoPlayer`, clickable exercises on `ActiveSessionCard` and the patient exercises list, and adding `video_storage_path` to the `/patient/exercises` query, which currently omits it).
+
+### Note (pre-existing, unrelated)
+- `npm run lint` reports 4 errors + 4 warnings, all in files untouched by this round (`app/(dashboard)/provider/page.tsx`, `app/(dashboard)/provider/patients/page.tsx`, `components/chat/ChatWindow.tsx`, `components/patient/PatientFormRecord.tsx`, `components/provider/ProviderFormRecord.tsx`, `components/ui/Modal.tsx`). Pre-existing; not addressed here.
+
+---
+
 ## Phases Remaining
 
 | Phase | Spec | Status |
