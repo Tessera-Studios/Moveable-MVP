@@ -16,4 +16,4 @@ This is a list of issues that need to be addressed before the MVP is ready for l
 - [x] Feature: Have the camera start facing the patient, not the user, if possible.
 - [x] Adjustment: Make sets and reps fields be text inputs instead of numbers, but validate them as numbers
 - [x] Adjustment: Make the "Edit" button bigger and easier to click.
-- [ ] Feature: Patients clicking on their "Exercise" should show the exercise information including the video in a modal.
+- [x] Feature: Patients clicking on their "Exercise" should show the exercise information including the video in a modal.

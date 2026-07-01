@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Exercise, SessionTemplate } from "@/lib/types";
 import { EmptyState } from "@/components/ui";
+import PatientExercisesList from "@/components/patient/PatientExercisesList";
 
 export default async function PatientExercisesPage(): Promise<React.JSX.Element> {
   const supabase = await createClient();
@@ -26,11 +27,34 @@ export default async function PatientExercisesPage(): Promise<React.JSX.Element>
     const { data: exData } = await supabase
       .from("exercises")
       .select(
-        "id, session_template_id, name, sets, reps, patient_notes, sort_order"
+        "id, session_template_id, name, sets, reps, patient_notes, sort_order, video_id"
       )
       .in("session_template_id", sessionIds)
       .order("sort_order", { ascending: true });
-    exercises = (exData ?? []) as Exercise[];
+
+    const exerciseRows = (exData ?? []) as Exercise[];
+
+    const videoIds = exerciseRows
+      .map((ex) => ex.video_id)
+      .filter((id): id is string => id !== null && id !== undefined);
+
+    const videoPathMap = new Map<string, string>();
+    if (videoIds.length > 0) {
+      const { data: videos } = await supabase
+        .from("videos")
+        .select("id, storage_path")
+        .in("id", videoIds);
+      for (const v of videos ?? []) {
+        videoPathMap.set(v.id as string, v.storage_path as string);
+      }
+    }
+
+    exercises = exerciseRows.map((row) => ({
+      ...row,
+      video_storage_path: row.video_id
+        ? (videoPathMap.get(row.video_id) ?? null)
+        : null,
+    }));
   }
 
   return (
@@ -44,30 +68,7 @@ export default async function PatientExercisesPage(): Promise<React.JSX.Element>
             description="Your physical therapist will assign exercises once you're connected."
           />
         ) : (
-          <div>
-            {exercises.map((ex, i) => (
-              <div
-                key={ex.id}
-                className={`flex items-center gap-3 py-3 ${
-                  i < exercises.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center shrink-0">
-                  <span className="text-xs font-semibold text-muted">
-                    {i + 1}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {ex.name}
-                  </p>
-                  <p className="text-xs text-placeholder">
-                    {ex.sets} sets · {ex.reps} reps
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <PatientExercisesList exercises={exercises} />
         )}
       </div>
     </div>

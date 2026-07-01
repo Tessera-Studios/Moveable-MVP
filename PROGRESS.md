@@ -495,10 +495,29 @@ Three of the four remaining ISSUES.md items were resolved (the fourth — patien
 - All three small "Edit" controls now have `h-10` (40px) tap targets. The `FocusAreaEditor` "Edit" / "Set focus area" `<button>`s use the `Button` primitive (`variant="ghost" size="sm"`); the two `<Link>`s (templates list, patient-detail assigned-session edit) use button-like classes (`inline-flex items-center justify-center h-10 px-4 rounded-button`) matching the existing "Create template" link idiom. Hrefs/onClick behaviour unchanged.
 
 ### Still pending
-- **Patient exercise-detail modal** — clicking an exercise on the patient side should open a modal with the exercise info + instructional video. Not yet built (needs a new `ExerciseDetailModal` reusing `Modal` + `VideoPlayer`, clickable exercises on `ActiveSessionCard` and the patient exercises list, and adding `video_storage_path` to the `/patient/exercises` query, which currently omits it).
+- **Patient exercise-detail modal** — resolved in the round below.
 
 ### Note (pre-existing, unrelated)
 - `npm run lint` reports 4 errors + 4 warnings, all in files untouched by this round (`app/(dashboard)/provider/page.tsx`, `app/(dashboard)/provider/patients/page.tsx`, `components/chat/ChatWindow.tsx`, `components/patient/PatientFormRecord.tsx`, `components/provider/ProviderFormRecord.tsx`, `components/ui/Modal.tsx`). Pre-existing; not addressed here.
+
+---
+
+## Feature Round — Patient exercise-detail modal (Complete)
+
+**Completed:** 2026-07-01
+**Spec:** `docs/superpowers/specs/2026-07-01-patient-exercise-detail-modal-design.md`
+**Branch:** `staging`
+
+Resolves the last remaining ISSUES.md item: patients can tap an exercise on the "Your Exercises" page to open a modal with the exercise details and its instructional video. `npx tsc --noEmit`, ESLint (changed files), and `next build` all pass.
+
+### What was built
+- `components/patient/ExerciseDetailModal.tsx` — NEW client component. Wraps the `Modal` primitive (`size="lg"`, title = exercise name). Shows the instructional video via `VideoPlayer` when `video_storage_path` is set (otherwise a muted "No video for this exercise yet."), `sets`/`reps` chips, and `patient_notes` when present. Renders `patient_notes` only — never `provider_notes` (provider-only per the confidentiality audit; the query doesn't fetch it).
+- `components/patient/PatientExercisesList.tsx` — NEW client component. Renders the "Your Exercises" rows as full-width buttons (with a chevron affordance) that open `ExerciseDetailModal` for the tapped exercise; holds the selected-exercise state.
+- `app/(dashboard)/patient/exercises/page.tsx` — stays a Server Component; added `video_id` to the exercises select plus the fault-tolerant two-phase `videos` lookup (mirrors the patient session page) to populate `video_storage_path`; swapped the inline row `.map()` for `<PatientExercisesList>`.
+
+### Notes
+- Scope limited to the `/patient/exercises` list (per design). The dashboard "Today's Session" card was intentionally left alone — its rows are drag-to-reorder and a tap target would clash with the drag gesture. The session executor already shows the video inline.
+- No schema or type changes (`Exercise` already declares `video_id` and `video_storage_path`).
 
 ---
 
