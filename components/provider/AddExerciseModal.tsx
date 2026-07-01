@@ -12,19 +12,37 @@ export interface NewExerciseData {
   video_storage_path: string | null;
 }
 
+interface NewExerciseDraft {
+  name: string;
+  sets: string;
+  reps: string;
+  patient_notes: string;
+  video_storage_path: string | null;
+}
+
 interface AddExerciseModalProps {
   open: boolean;
   onClose: () => void;
   onAdd: (data: NewExerciseData) => void;
 }
 
-const EMPTY: NewExerciseData = {
+const EMPTY: NewExerciseDraft = {
   name: "",
-  sets: 3,
-  reps: 10,
+  sets: "3",
+  reps: "10",
   patient_notes: "",
   video_storage_path: null,
 };
+
+/** Digits only, so the field can never hold a non-numeric value. */
+function sanitizeDigits(value: string): string {
+  return value.replace(/[^0-9]/g, "");
+}
+
+/** A valid positive integer draft parses to an integer >= 1. */
+function isPositiveIntegerDraft(value: string): boolean {
+  return /^[0-9]+$/.test(value) && Number(value) >= 1;
+}
 
 /**
  * Video-first exercise creation. The instructional video is the primary
@@ -37,10 +55,12 @@ export function AddExerciseModal({
   onClose,
   onAdd,
 }: AddExerciseModalProps): React.JSX.Element {
-  const [data, setData] = useState<NewExerciseData>(EMPTY);
+  const [data, setData] = useState<NewExerciseDraft>(EMPTY);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   function reset(): void {
     setData(EMPTY);
+    setFieldError(null);
   }
 
   function handleClose(): void {
@@ -50,7 +70,18 @@ export function AddExerciseModal({
 
   function handleAdd(): void {
     if (!data.name.trim()) return;
-    onAdd({ ...data, name: data.name.trim() });
+
+    if (!isPositiveIntegerDraft(data.sets) || !isPositiveIntegerDraft(data.reps)) {
+      setFieldError("Sets and reps must be whole numbers of at least 1.");
+      return;
+    }
+
+    onAdd({
+      ...data,
+      name: data.name.trim(),
+      sets: Number(data.sets),
+      reps: Number(data.reps),
+    });
     reset();
   }
 
@@ -98,13 +129,14 @@ export function AddExerciseModal({
               Sets
             </label>
             <input
-              type="number"
-              min={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={data.sets}
               onChange={(e) =>
                 setData((prev) => ({
                   ...prev,
-                  sets: Math.max(1, Number(e.target.value)),
+                  sets: sanitizeDigits(e.target.value),
                 }))
               }
               className="w-full h-11 rounded-sm border border-border px-3 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
@@ -115,19 +147,23 @@ export function AddExerciseModal({
               Reps
             </label>
             <input
-              type="number"
-              min={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={data.reps}
               onChange={(e) =>
                 setData((prev) => ({
                   ...prev,
-                  reps: Math.max(1, Number(e.target.value)),
+                  reps: sanitizeDigits(e.target.value),
                 }))
               }
               className="w-full h-11 rounded-sm border border-border px-3 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
+        {fieldError && (
+          <p className="text-sm text-error -mt-2">{fieldError}</p>
+        )}
 
         <div>
           <label className="text-xs font-medium text-muted mb-1 block">

@@ -24,13 +24,18 @@ import { CSS } from "@dnd-kit/utilities";
 export interface ExerciseFormItem {
   id: string;
   name: string;
-  sets: number;
-  reps: number;
+  sets: string;
+  reps: string;
   patient_notes: string;
   sort_order: number;
   isNew?: boolean;
   video_id: string | null;
   video_storage_path: string | null;
+}
+
+/** Digits only, so the field can never hold a non-numeric value. */
+function sanitizeDigits(value: string): string {
+  return value.replace(/[^0-9]/g, "");
 }
 
 interface ExerciseListProps {
@@ -147,11 +152,12 @@ function SortableRow({
           </label>
           <input
             id={setsId}
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={item.sets}
             onChange={(e) =>
-              onChange({ ...item, sets: Math.max(1, Number(e.target.value)) })
+              onChange({ ...item, sets: sanitizeDigits(e.target.value) })
             }
             className="w-full h-10 rounded-sm border border-border px-3 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -165,11 +171,12 @@ function SortableRow({
           </label>
           <input
             id={repsId}
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={item.reps}
             onChange={(e) =>
-              onChange({ ...item, reps: Math.max(1, Number(e.target.value)) })
+              onChange({ ...item, reps: sanitizeDigits(e.target.value) })
             }
             className="w-full h-10 rounded-sm border border-border px-3 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />

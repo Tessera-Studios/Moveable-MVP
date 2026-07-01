@@ -79,8 +79,8 @@ export default async function EditSessionPage({
     .map((ex) => ({
       id: ex.id,
       name: ex.name,
-      sets: ex.sets,
-      reps: ex.reps,
+      sets: String(ex.sets),
+      reps: String(ex.reps),
       patient_notes: ex.patient_notes ?? "",
       sort_order: ex.sort_order,
       video_id: ex.video_id,

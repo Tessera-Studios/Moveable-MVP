@@ -63,6 +63,16 @@ async function wirePendingVideo(
   return null;
 }
 
+/** A valid positive integer draft parses to an integer >= 1. */
+function isPositiveIntegerDraft(value: string): boolean {
+  return /^[0-9]+$/.test(value) && Number(value) >= 1;
+}
+
+/** Coerce a validated sets/reps draft string to its numeric value. */
+function toPositiveInteger(value: string): number {
+  return Number(value);
+}
+
 export function SessionForm({
   mode,
   sessionId,
@@ -90,8 +100,8 @@ export function SessionForm({
       {
         id: `new-${Date.now()}-${Math.random()}`,
         name: data.name,
-        sets: data.sets,
-        reps: data.reps,
+        sets: String(data.sets),
+        reps: String(data.reps),
         patient_notes: data.patient_notes,
         sort_order: prev.length,
         isNew: true,
@@ -112,6 +122,14 @@ export function SessionForm({
     }
     if (!patientId) {
       setError("Please select a patient.");
+      return;
+    }
+    if (
+      exercises.some(
+        (ex) => !isPositiveIntegerDraft(ex.sets) || !isPositiveIntegerDraft(ex.reps)
+      )
+    ) {
+      setError("Sets and reps must be whole numbers of at least 1 for every exercise.");
       return;
     }
 
@@ -135,8 +153,8 @@ export function SessionForm({
             exercises.map((ex) =>
               addExercise(createdId, {
                 name: ex.name,
-                sets: ex.sets,
-                reps: ex.reps,
+                sets: toPositiveInteger(ex.sets),
+                reps: toPositiveInteger(ex.reps),
                 patient_notes: ex.patient_notes || null,
                 sort_order: ex.sort_order,
               })
@@ -194,8 +212,8 @@ export function SessionForm({
           toAdd.map((ex) =>
             addExercise(sessionId, {
               name: ex.name,
-              sets: ex.sets,
-              reps: ex.reps,
+              sets: toPositiveInteger(ex.sets),
+              reps: toPositiveInteger(ex.reps),
               patient_notes: ex.patient_notes || null,
               sort_order: ex.sort_order,
             })
@@ -207,8 +225,8 @@ export function SessionForm({
           ...toUpdate.map((ex) =>
             updateExercise(ex.id, {
               name: ex.name,
-              sets: ex.sets,
-              reps: ex.reps,
+              sets: toPositiveInteger(ex.sets),
+              reps: toPositiveInteger(ex.reps),
               patient_notes: ex.patient_notes || null,
               sort_order: ex.sort_order,
             })

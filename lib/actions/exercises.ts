@@ -10,6 +10,11 @@ export interface ExerciseInput {
   sort_order: number;
 }
 
+/** Rejects NaN, non-integers, and values below 1. */
+function isValidCount(value: number): boolean {
+  return Number.isInteger(value) && value >= 1;
+}
+
 export async function addExercise(
   sessionTemplateId: string,
   data: ExerciseInput
@@ -18,8 +23,8 @@ export async function addExercise(
   if ("error" in auth) return auth;
 
   if (!data.name.trim()) return { error: "Exercise name is required." };
-  if (data.sets < 1) return { error: "Sets must be at least 1." };
-  if (data.reps < 1) return { error: "Reps must be at least 1." };
+  if (!isValidCount(data.sets)) return { error: "Sets must be a whole number of at least 1." };
+  if (!isValidCount(data.reps)) return { error: "Reps must be a whole number of at least 1." };
 
   const { data: row, error } = await auth.supabase
     .from("exercises")
@@ -46,8 +51,8 @@ export async function updateExercise(
   if ("error" in auth) return auth;
 
   if (!data.name.trim()) return { error: "Exercise name is required." };
-  if (data.sets < 1) return { error: "Sets must be at least 1." };
-  if (data.reps < 1) return { error: "Reps must be at least 1." };
+  if (!isValidCount(data.sets)) return { error: "Sets must be a whole number of at least 1." };
+  if (!isValidCount(data.reps)) return { error: "Reps must be a whole number of at least 1." };
 
   const { error } = await auth.supabase
     .from("exercises")
