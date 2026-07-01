@@ -44,7 +44,7 @@ export function RecordVideo({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [elapsed, setElapsed] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [toggleError, setToggleError] = useState<string>("");
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function RecordVideo({
     };
   }, [previewUrl]);
 
-  const startCamera = useCallback(async (mode: "user" | "environment" = "user"): Promise<void> => {
+  const startCamera = useCallback(async (mode: "user" | "environment" = "environment"): Promise<void> => {
     if (!isRecordingSupported()) {
       setState("error");
       setErrorMessage(
@@ -74,8 +74,14 @@ export function RecordVideo({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      setFacingMode(mode);
       setState("idle");
-    } catch {
+    } catch (err) {
+      // Rear camera unavailable (e.g. desktops) — fall back to the front camera silently.
+      if (mode === "environment" && (err instanceof OverconstrainedError || (err instanceof Error && err.name === "NotFoundError"))) {
+        await startCamera("user");
+        return;
+      }
       setState("error");
       setErrorMessage(
         "Camera access was denied. Please allow camera and microphone access and try again."
@@ -84,7 +90,7 @@ export function RecordVideo({
   }, []);
 
   useEffect(() => {
-    void startCamera("user");
+    void startCamera("environment");
   }, [startCamera]);
 
   async function handleToggleCamera(): Promise<void> {
