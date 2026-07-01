@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useToast } from "@/components/ui";
+import { Button, useToast } from "@/components/ui";
 import { updatePatientFocusArea } from "@/lib/actions/patients";
 
 const DEFAULT_OPTIONS = ["Shoulder", "Back", "Legs", "Core", "Arms", "Other"];
@@ -38,22 +38,26 @@ export function FocusAreaEditor({ patientId, currentFocusArea }: Props): React.J
         {displayed ? (
           <>
             <span className="text-sm text-foreground">{displayed}</span>
-            <button
+            <Button
               onClick={() => setEditing(true)}
-              className="text-xs text-primary font-medium shrink-0"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
             >
               Edit
-            </button>
+            </Button>
           </>
         ) : (
           <>
             <span className="text-sm text-muted">Not set</span>
-            <button
+            <Button
               onClick={() => setEditing(true)}
-              className="text-xs text-primary font-medium shrink-0"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
             >
               Set focus area
-            </button>
+            </Button>
           </>
         )}
       </div>

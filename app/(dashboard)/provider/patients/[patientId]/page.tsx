@@ -140,7 +140,7 @@ export default async function PatientDetailPage({
                 ? `/provider/sessions/${assignedSession.id}/edit`
                 : `/provider/sessions/new?patientId=${patientId}`
             }
-            className="text-sm text-primary font-medium"
+            className="inline-flex items-center justify-center h-10 px-4 rounded-button text-sm text-primary font-medium"
           >
             {assignedSession ? "Edit" : "Assign session"}
           </Link>

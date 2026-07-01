@@ -73,7 +73,7 @@ export default async function TemplatesPage(): Promise<React.JSX.Element> {
               </div>
               <Link
                 href={`/provider/sessions/${t.id}/edit`}
-                className="text-sm text-primary font-medium shrink-0"
+                className="inline-flex items-center justify-center h-10 px-4 rounded-button text-sm text-primary font-medium shrink-0"
               >
                 Edit
               </Link>
